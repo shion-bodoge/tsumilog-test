@@ -252,6 +252,25 @@
 
   /* 一覧：操作列 */
   .actions{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+
+  /* ▼ バージョン右下表示 */
+  .versionBadge{
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    font-size: 12px;
+    opacity: 0.6;
+    background: rgba(0,0,0,0.05);
+    padding: 6px 10px;
+    border-radius: 12px;
+    backdrop-filter: blur(4px);
+    z-index: 999;
+    transition: opacity 0.2s ease;
+  }
+
+  .versionBadge:hover{
+    opacity: 1;
+  }
 </style>
 </head>
 
@@ -489,9 +508,15 @@
       <!-- メガミ/BAN 共通のユーザー辞書（候補） -->
       <datalist id="wordList"></datalist>
 
+  <!-- ▼ バージョン表示 -->
+  <div class="versionBadge" id="versionBadge"></div>
+
 <script>
 (() => {
   const $ = (id) => document.getElementById(id);
+
+  //バージョン更新
+  const APP_VERSION = "0.1.0";
 
   function track(name, params={}){
     // gtag 未ロードでも壊れないように
@@ -1754,6 +1779,9 @@
   });
 
   $("typeFilter").value = state.selectedType;
+
+    const vb = $("versionBadge");
+    if(vb) vb.textContent = `v${APP_VERSION}`;
 
   // 初期化
   render();

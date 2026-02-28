@@ -362,6 +362,25 @@
   table{ border-spacing:0 6px; }
   td{ padding:8px; font-size:12px; }
 }
+
+  /* ▼ バージョン右下表示 */
+  .versionBadge{
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    font-size: 12px;
+    opacity: 0.6;
+    background: rgba(0,0,0,0.05);
+    padding: 6px 10px;
+    border-radius: 12px;
+    backdrop-filter: blur(4px);
+    z-index: 999;
+    transition: opacity 0.2s ease;
+  }
+
+  .versionBadge:hover{
+    opacity: 1;
+  }
 </style>
 </head>
 
@@ -731,12 +750,18 @@
   </div>
 </div>
 
+  <!-- ▼ バージョン表示 -->
+  <div class="versionBadge" id="versionBadge"></div>
+
 <script>
 (() => {
   // =========================================================
   // 0) DOMショートカット
   // =========================================================
   const $ = (id) => document.getElementById(id);
+  
+  //バージョン更新
+  const APP_VERSION = "0.1.0";
 
   function track(name, params={}){
     // gtag 未ロードでも壊れないように
@@ -1554,6 +1579,9 @@
     renderStats(rows);
     renderRecent(rows);
     $("nowChip").textContent = nowStr();
+
+    const vb = $("versionBadge");
+    if(vb) vb.textContent = `v${APP_VERSION}`;
   }
 
   // =========================================================
