@@ -1,0 +1,1702 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>つみログ（入力）</title>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-YY44S858BX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+
+  // 初期化
+  gtag('js', new Date());
+
+  // 設定（必要ならオプション追加）
+  gtag('config', 'G-YY44S858BX', {
+    // 例：開発中だけデバッグしたい場合
+    // debug_mode: true
+  });
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Zen+Old+Mincho:wght@600&family=Shippori+Mincho:wght@400;600&display=swap" rel="stylesheet">
+
+<style>
+  /* =========================
+    1) テーマ変数（見た目の根っこ）
+    - JSで localStorage の値を読み取り、ここを書き換える
+    - ユーザーはテーマ画面から変えられる
+  ========================= */
+  :root{
+    /* 背景（光 + グラデーション） */
+    --bg1: rgba(14,165,233,.13);     /* 光① */
+    --bg2: rgba(34,197,94,.10);      /* 光② */
+    --bgTop: #f7fbff;               /* 背景上 */
+    --bgBottom: #f7fff9;            /* 背景下 */
+
+    /* 文字 */
+    --text:#1f2937;
+    --muted:#6b7280;
+
+    /* カード */
+    --card: rgba(255,255,255,.80);
+    --stroke: rgba(31,41,55,.14);
+
+    /* ボタン/アクセント */
+    --accent:#ff7a2f;
+    --accent2:#ffd2a8;
+
+    /* 状態色 */
+    --danger:#d83a3a;
+    --ok:#1d8f5a;
+
+    /* レイアウト（固定） */
+    --shadow: 0 14px 38px rgba(0,0,0,.08);
+    --r:18px;
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family:system-ui,-apple-system,"Segoe UI","Hiragino Sans","Noto Sans JP",sans-serif;
+    color:var(--text);
+    background:
+      radial-gradient(900px 600px at 18% 6%, var(--bg1), transparent 60%),
+      radial-gradient(900px 700px at 85% 15%, var(--bg2), transparent 60%),
+      linear-gradient(180deg, var(--bgTop), var(--bgBottom));
+    min-height:100vh;
+  }
+
+  header{
+    padding:18px 16px 10px;
+    max-width:1100px;
+    margin:0 auto;
+    display:flex;
+    gap:12px;
+    align-items:flex-end;
+    justify-content:space-between;
+  }
+  .title{font-weight:900;font-size:20px;letter-spacing:.02em}
+  .rightHead{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+  .chip{
+    font-size:12px;
+    padding:4px 10px;
+    border-radius:999px;
+    border:1px solid rgba(0,0,0,.08);
+    background:#fff;
+    color:var(--muted);
+    white-space:nowrap;
+  }
+  .chipBtn{
+    font:inherit;
+    cursor:pointer;
+  }
+
+  .wrap{
+    max-width:1100px;
+    margin:0 auto;
+    padding:0 16px 22px;
+    display:grid;
+    grid-template-columns: 420px 1fr;
+    gap:14px;
+  }
+  @media (max-width: 980px){ .wrap{grid-template-columns:1fr} }
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--stroke);
+    border-radius:var(--r);
+    box-shadow:var(--shadow);
+    backdrop-filter: blur(8px);
+  }
+  .card h2{
+    font-size:14px;margin:0;padding:14px 14px 10px;
+    border-bottom:1px solid rgba(0,0,0,.06);
+    display:flex;align-items:center;justify-content:space-between;gap:10px
+  }
+
+  form{padding:12px 14px 14px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .row{display:flex;flex-direction:column;gap:6px}
+  label{font-size:12px;color:var(--muted)}
+  input,select,textarea{
+    width:100%;
+    padding:10px 10px;
+    border-radius:12px;
+    border:1px solid rgba(0,0,0,.12);
+    background:#fff;
+    color:var(--text);
+    outline:none;
+  }
+  textarea{
+    min-height:140px;
+    resize:vertical;
+    line-height:1.6;
+  }
+  .full{grid-column:1/-1}
+
+  .btns{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
+  button{border:0;border-radius:12px;padding:10px 12px;font-weight:900;cursor:pointer}
+  .primary{background:linear-gradient(90deg,var(--accent),var(--accent2));color:#fff}
+  .ghost{background:#fff;border:1px solid rgba(0,0,0,.12);color:var(--text)}
+  .danger{background:#fff;border:1px solid rgba(216,58,58,.35);color:var(--danger)}
+  .hint{font-size:12px;color:var(--muted);margin-left:auto}
+
+  /* stats */
+  .stats{padding:14px}
+  .statsTop{
+    display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:10px
+  }
+  .statsTitle{font-size:18px;margin:0}
+  .meta{color:var(--muted);font-size:12px;margin-top:6px}
+  .statsControls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .statsControls select{padding:6px 10px;border-radius:999px;font-size:12px}
+  .box{background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:14px;padding:10px}
+  .cap{font-size:12px;color:var(--muted);margin-bottom:6px}
+  .body{font-size:14px;font-weight:900}
+  .mini{color:var(--muted);font-size:12px}
+
+  /* recent */
+  .recent{padding:10px 14px 14px}
+  table{width:100%;border-collapse:separate;border-spacing:0 8px}
+  td{background:#fff;border:1px solid rgba(0,0,0,.08);padding:10px;font-size:13px;vertical-align:top}
+  td:first-child{border-radius:12px 0 0 12px}
+  td:last-child{border-radius:0 12px 12px 0}
+  .linklike{color:var(--accent);text-decoration:underline;cursor:pointer;font-weight:900}
+  .empty{color:var(--muted);padding:10px 0;font-size:13px}
+
+  /* =========================
+    モーダル共通（テーマ/ヘルプ）
+  ========================= */
+  .modal{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.35);
+    padding:16px;
+    z-index:999;
+    align-items:center;
+    justify-content:center;
+  }
+  .modal .inner{
+    max-width:680px;
+    width:100%;
+    padding:14px;
+    max-height: calc(100vh - 32px);
+    overflow:auto;
+  }
+  .modalTop{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    margin-bottom:10px;
+  }
+  .modalBody{
+    overflow:visible;
+    padding-right:4px; 
+  }
+  .modalTitle{
+    margin:0;
+    font-size:16px;
+    font-weight:900;
+  }
+
+/* =========================
+   詳細モーダル専用（index側）
+========================= */
+
+  #detailModal{
+    align-items: flex-start;
+    justify-content: center;
+  }
+
+  #detailModal .inner{
+    width: min(720px, calc(100vw - 32px));
+    height: min(75vh, calc(100vh - 32px));
+    margin: 24px 0 0;
+
+    display: flex;
+    flex-direction: column;
+
+    overflow: hidden;
+  }
+
+  #detailModal .helpBox{
+    flex: 1;
+    overflow: auto;
+    min-height: 0;
+  }
+
+  /* テーマUI */
+  .presetBar{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-bottom:10px;
+  }
+  .presetBtn{
+    border:1px solid rgba(0,0,0,.12);
+    background:#fff;
+    border-radius:999px;
+    padding:8px 10px;
+    cursor:pointer;
+    font-weight:900;
+    font-size:12px;
+  }
+  /* ✅ 選択中のプリセットが分かる */
+  .presetBtn.active{
+    border-color: rgba(255,122,47,.55);
+    box-shadow: 0 0 0 3px rgba(255,122,47,.18);
+  }
+
+  .themeGrid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+  }
+  .themeGrid input[type="color"]{
+    padding:0;
+    height:42px;
+    border-radius:12px;
+    border:1px solid rgba(0,0,0,.12);
+    background:#fff;
+  }
+  .themeGrid input[type="text"]{
+    font-size:12px;
+  }
+  .note{
+    margin:8px 0 0;
+    color:var(--muted);
+    font-size:12px;
+    line-height:1.5;
+  }
+
+  /* 共有UI（JSON） */
+  .shareRow{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-top:10px;
+  }
+  .shareBox{
+    width:100%;
+    min-height:120px;
+    margin-top:8px;
+  }
+
+  /* ヘルプ */
+  .helpBox{
+    background:#fff;
+    border:1px solid rgba(0,0,0,.08);
+    border-radius:14px;
+    padding:12px;
+    line-height:1.7;
+    font-size:14px;
+  }
+  .helpBox h4{
+    margin:0 0 6px;
+    font-size:14px;
+  }
+  .helpBox ul{
+    margin:6px 0 0 18px;
+    padding:0;
+  }
+
+  /* =========================
+   モバイル最小対応（追加するだけ）
+  ========================= */
+@media (max-width: 520px){
+  /* 全体 */
+  header{
+    padding:14px 12px 8px;
+  }
+  .wrap{
+    padding:0 12px 18px;
+    gap:12px;
+  }
+
+  /* 右上チップが詰まりやすいので少し小さく */
+  .chip{
+    font-size:11px;
+    padding:4px 8px;
+  }
+
+  /* 入力エリア：2列→1列 */
+  .grid{
+    grid-template-columns:1fr;
+  }
+
+  /* モーダル：画面いっぱい寄りにして扱いやすく */
+  .modal{
+    padding:10px;
+  }
+  .modal .inner{
+    max-height: 92vh;
+    padding:12px;
+  }
+
+  /* テーマの2列→1列（スマホで最重要） */
+  .themeGrid{
+    grid-template-columns:1fr;
+  }
+
+  /* 共有ボタンを縦並びに */
+  .shareRow{
+    flex-direction:column;
+  }
+  .shareRow button{
+    width:100%;
+  }
+
+  /* JSON欄：少し高めにして貼り付けやすく */
+  .shareBox{
+    min-height: 180px;
+  }
+
+  /* 直近5件の表：横幅がきついので少し調整 */
+  table{ border-spacing:0 6px; }
+  td{ padding:8px; font-size:12px; }
+}
+</style>
+</head>
+
+<body>
+<header>
+  <div class="title">🌱 つみログ</div>
+  <div class="rightHead">
+    <!-- 一覧ページへ -->
+    <a class="chip" href="list.html" style="text-decoration:none;color:inherit;">一覧を見る →</a>
+
+    <!-- ヘルプ -->
+    <button class="chip chipBtn" id="openHelp" type="button">❓ ヘルプ</button>
+
+    <!-- テーマ（プリセット＋自由変更） -->
+    <button class="chip chipBtn" id="openTheme" type="button">🎨 テーマ</button>
+
+    <!-- ちょいステータス -->
+    <div class="chip" title="サーバー送信はありません。ブラウザ内に保存されます。">🔒 ローカル保存</div>
+    <div class="chip" id="todayRateChip">今日：0勝0敗</div>
+    <div class="chip" id="countChip">0件</div>
+  </div>
+</header>
+
+<!-- 入力ゾーン -->
+<div class="wrap">
+  <section class="card">
+    <h2>
+      <span>入力</span>
+      <span class="chip" id="nowChip">—</span>
+    </h2>
+
+    <form id="f">
+      <div class="grid">
+        <div class="row">
+          <label>相手（任意）</label>
+          <input id="opponent" placeholder="例：○○さん" />
+        </div>
+
+        <div class="row">
+          <label>勝敗</label>
+          <select id="result" required>
+            <option value="WIN">勝ち</option>
+            <option value="LOSE">負け</option>
+          </select>
+        </div>
+
+        <div class="row">
+          <label>自分メガミ（使用）</label>
+          <input id="my1" list="wordList" placeholder="例：ユリナ" required />
+          <input id="my2" list="wordList" placeholder="例：サイネ" required />
+        </div>
+
+        <div class="row">
+          <label>相手メガミ（使用）</label>
+          <input id="their1" list="wordList" placeholder="例：ヒミカ" required />
+          <input id="their2" list="wordList" placeholder="例：トコヨ" required />
+        </div>
+
+        <div class="row">
+          <label>BANされたメガミ</label>
+          <input id="myBan" list="wordList" placeholder="例：オボロ" />
+        </div>
+
+        <div class="row">
+          <label>BANしたメガミ</label>
+          <input id="theirBan" list="wordList" placeholder="例：ユキヒ" />
+        </div>
+
+        <div class="row">
+          <label>先後（任意）</label>
+          <select id="turn">
+            <option value="">—</option>
+            <option value="先手">先手</option>
+            <option value="後手">後手</option>
+          </select>
+        </div>
+
+        <div class="row">
+          <label>対戦区分（任意）</label>
+          <select id="matchType">
+            <option value="">—</option>
+            <option value="tournament">大会</option>
+            <option value="free">フリプ</option>
+            <option value="rank">ランク</option>
+          </select>
+        </div>
+
+        <div class="row">
+          <label>メモ短縮（任意）</label>
+          <input id="tag" placeholder="例：リーサル急ぎ / 間合ミス" />
+        </div>
+
+        <div class="row full">
+          <label>反省点（任意・複数行OK）</label>
+          <textarea id="pivot" placeholder="例：第3ターン、前進せずに間合2維持すべきだった"></textarea>
+        </div>
+
+        <div class="row full">
+          <label>改善点（任意・複数行OK）</label>
+          <textarea id="next" placeholder="例：リーサル前に指差し確認＋計算してから宣言"></textarea>
+        </div>
+      </div>
+
+      <div class="btns">
+        <button class="primary" type="submit">保存</button>
+        <button class="ghost" type="button" id="clearForm">入力クリア</button>
+        <button class="danger" type="button" id="wipeAll">全消し</button>
+        <span class="hint">※保存はこのPCのブラウザ内です</span>
+      </div>
+      
+      <!-- メガミ/BAN 共通のユーザー辞書（候補） -->
+      <datalist id="wordList"></datalist>
+    </form>
+  </section>
+
+  <!-- 勝率ゾーン -->
+  <section style="display:flex;flex-direction:column;gap:14px;">
+    <section class="card stats" id="statsCard">
+      <div class="statsTop">
+        <div>
+          <h3 class="statsTitle">勝率</h3>
+          <div class="meta" id="statsMeta">記録がありません</div>
+        </div>
+        <div class="statsControls">
+          <span class="chip" id="todayChip">今日：0勝0敗</span>
+     
+          <!-- ✅ 区分フィルタ（勝率の対象を切り替える） -->
+          <select id="typeSelect" aria-label="区分を選択">
+            <option value="ALL">区分：なし（全部）</option>
+            <option value="tournament">区分：大会</option>
+            <option value="free">区分：フリプ</option>
+            <option value="rank">区分：ランク</option>
+          </select>
+
+          <select id="yearSelect" aria-label="年を選択"></select>
+        </div>
+      </div>
+
+      <div class="textBlock">
+        <div class="box">
+          <div class="cap">今日の勝率</div>
+          <div class="body" id="rateToday">—</div>
+          <div class="mini" id="rateTodayMeta"></div>
+        </div>
+
+        <div class="box">
+          <div class="cap">選択した年（1月〜12月）の勝率</div>
+          <div class="body" id="rateYear">—</div>
+          <div class="mini" id="rateYearMeta"></div>
+        </div>
+
+        <div class="box">
+          <div class="cap">全体の勝率</div>
+          <div class="body" id="rateAll">—</div>
+          <div class="mini" id="rateAllMeta"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card recent">
+      <h2>
+        <span>直近6件</span>
+        <a class="chip" href="list.html" style="text-decoration:none;color:inherit;">一覧へ</a>
+      </h2>
+      <div id="recentArea"></div>
+    </section>
+  </section>
+</div>
+
+<!-- =========================
+  テーマモーダル
+  - プリセット（ワンクリック）
+  - 手動調整（色ピッカー + bg1/bg2は文字で自由入力）
+  - 共有（JSON）
+  - マイテーマ（名前をつけて保存）
+========================= -->
+<div id="themeModal" class="modal" aria-hidden="true">
+  <div class="card inner">
+    <div class="modalTop">
+      <h3 class="modalTitle">🎨 テーマ設定</h3>
+      <button class="ghost" type="button" id="closeTheme">閉じる</button>
+    </div>
+
+    <div class="modalBody">
+    <!-- プリセット（JSでボタンを生成） -->
+    <div class="presetBar" id="presetBar"></div>
+
+    <!-- マイテーマ保存 -->
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0;">
+      <input id="myThemeName" type="text" placeholder="マイテーマ名（例：夜ふかしブルー）"
+             style="flex:1;min-width:220px;padding:10px;border-radius:12px;border:1px solid rgba(0,0,0,.12);">
+      <button class="ghost" type="button" id="saveMyThemeBtn">＋ 名前をつけて保存</button>
+    </div>
+
+    <div class="mini" style="margin:0 0 10px;">
+      ※保存したテーマはこのブラウザ内に追加され、上の一覧に表示されます
+    </div>
+
+    <!-- 現在の状態（プリセット名 or カスタム） -->
+    <div class="mini" id="themeCurrentLabel" style="margin:6px 0 10px;">現在：—</div>
+
+    <div class="themeGrid">
+      <div class="row">
+        <label>アクセント（ボタン）</label>
+        <input type="color" id="t_accent">
+      </div>
+      <div class="row">
+        <label>アクセント2（グラデーション）</label>
+        <input type="color" id="t_accent2">
+      </div>
+
+      <div class="row">
+        <label>文字色</label>
+        <input type="color" id="t_text">
+      </div>
+      <div class="row">
+        <label>サブ文字</label>
+        <input type="color" id="t_muted">
+      </div>
+
+      <div class="row">
+        <label>背景上</label>
+        <input type="color" id="t_bgTop">
+      </div>
+      <div class="row">
+        <label>背景下</label>
+        <input type="color" id="t_bgBottom">
+      </div>
+
+      <div class="row full">
+        <label>背景の光①（CSS色：rgba など）</label>
+        <input type="text" id="t_bg1" placeholder='例：rgba(14,165,233,.13)'>
+      </div>
+      <div class="row full">
+        <label>背景の光②（CSS色：rgba など）</label>
+        <input type="text" id="t_bg2" placeholder='例：rgba(34,197,94,.10)'>
+      </div>
+
+      <div class="row">
+        <label>カード背景（CSS色）</label>
+        <input type="text" id="t_card" placeholder='例：rgba(255,255,255,.80)'>
+      </div>
+      <div class="row">
+        <label>枠線（CSS色）</label>
+        <input type="text" id="t_stroke" placeholder='例：rgba(31,41,55,.14)'>
+      </div>
+    </div>
+
+    <p class="note">
+      プリセットを選んでから微調整もOK。設定はこのブラウザに保存され、list.htmlにも同じテーマが反映されます。
+    </p>
+
+    <div class="btns" style="margin-top:12px;">
+      <button class="primary" type="button" id="applyThemeBtn">適用</button>
+      <button class="ghost" type="button" id="resetThemeBtn">初期に戻す</button>
+      <span class="hint">※配布しても各ユーザーのブラウザで個別に保存されます</span>
+    </div>
+
+    <!-- 共有：エクスポート / インポート -->
+    <div class="shareRow">
+      <button class="ghost" type="button" id="exportThemeBtn">テーマをコピー（JSON）</button>
+      <button class="ghost" type="button" id="importThemeBtn">貼り付けて適用</button>
+    </div>
+    <textarea id="themeJsonBox" class="shareBox" placeholder="ここにテーマJSONが出ます / ここへ貼り付けてインポートできます"></textarea>
+    <div class="mini" style="margin-top:6px;">※JSONは「色設定のみ」です。配信で同じ配色にしたい人向けに共有できます。</div>
+    </div>
+  </div>
+</div>
+
+<!-- =========================
+  ヘルプモーダル（使い方）
+========================= -->
+<div id="helpModal" class="modal" aria-hidden="true">
+  <div class="card inner">
+    <div class="modalTop">
+      <h3 class="modalTitle">❓ 使い方</h3>
+      <button class="ghost" type="button" id="closeHelp">閉じる</button>
+    </div>
+
+    <div class="helpBox">
+      <h4>このツールでできること</h4>
+      <ul>
+        <li>対戦の記録を「このPCのブラウザ内」に保存します（サーバー送信なし）。</li>
+        <li>勝率（今日 / 年 / 全体）を自動で表示します。</li>
+        <li>直近5件や一覧から、試合メモをクリックでコピーできます。</li>
+      </ul>
+    </div>
+
+    <div class="helpBox" style="margin-top:10px;">
+      <h4>入力ページ（index.html）</h4>
+      <ul>
+        <li><b>必須</b>：自分メガミ2つ / 相手メガミ2つ</li>
+        <li><b>任意</b>：反省点・改善点（複数行OK）</li>
+        <li>保存するとフォームは自動でクリアされます。</li>
+        <li>間違えて保存してしまった場合は、一覧から編集できます。</li>
+      </ul>
+    </div>
+
+    <div class="helpBox" style="margin-top:10px;">
+      <h4>一覧ページ（list.html）</h4>
+      <ul>
+        <li>検索・フィルタ・30件ごとのページングができます。</li>
+        <li>反省点は一覧では<b>1行目だけ</b>表示します（見やすさ優先）。</li>
+        <li>行をクリックすると、その試合の内容を全文コピーできます。</li>
+      </ul>
+    </div>
+
+    <div class="helpBox" style="margin-top:10px;">
+      <h4>データについて</h4>
+      <ul>
+        <li>保存場所：ブラウザの localStorage（同じブラウザ・同じPCでのみ見えます）</li>
+        <li>ブラウザのデータ削除・初期化をすると消えることがあります。</li>
+        <li>「全消し」は取り消せません（確認が出ます）。</li>
+        <li>⚠️ 端末/ブラウザを変えると引き継げません。</li>
+      </ul>
+    </div>
+
+    <div class="helpBox" style="margin-top:10px;">
+      <h4>テーマ（見た目）</h4>
+      <ul>
+        <li>プリセットで一発変更、色ピッカーで微調整もできます。</li>
+        <li>テーマもブラウザ内に保存され、list.htmlにも反映されます。</li>
+        <li>JSONでテーマ共有（コピー＆貼り付け）ができます。</li>
+        <li>「名前をつけて保存」で自分用プリセットが作れます。</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- =========================
+  詳細モーダル（直近クリックで開く）
+========================= -->
+<div id="detailModal" class="modal" aria-hidden="true">
+  <div class="card inner">
+    <div class="modalTop">
+      <h3 class="modalTitle">＜試合の詳細＞</h3>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <button class="ghost" type="button" id="closeDetail">閉じる</button>
+      </div>
+    </div>
+
+    <div class="helpBox" style="background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:14px;padding:12px;">
+      <div class="detailMeta" id="detailMeta" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;"></div>
+
+      <div style="display:grid;gap:10px">
+        <div>
+          <div class="cap">基本情報</div>
+          <div class="pre" id="detailBase" style="white-space:pre-wrap;word-break:break-word;">—</div>
+        </div>
+
+        <div>
+          <div class="cap">BAN</div>
+          <div class="pre" id="detailBan" style="white-space:pre-wrap;word-break:break-word;">—</div>
+        </div>
+
+        <div>
+          <div class="cap">反省点</div>
+          <div class="pre" id="detailPivot" style="white-space:pre-wrap;word-break:break-word;">—</div>
+        </div>
+
+        <div>
+          <div class="cap">改善点</div>
+          <div class="pre" id="detailNext" style="white-space:pre-wrap;word-break:break-word;">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  // =========================================================
+  // 0) DOMショートカット
+  // =========================================================
+  const $ = (id) => document.getElementById(id);
+
+  function track(name, params={}){
+    // gtag 未ロードでも壊れないように
+    if(typeof window.gtag === "function"){
+      window.gtag("event", name, params);
+    }
+  }
+
+  // =========================================================
+  //  iPhone/Safari対策
+  // =========================================================
+  async function copyText(text){
+    // 1) まずは Clipboard API（https / ユーザー操作が必要なことが多い）
+    try{
+      if(navigator.clipboard && window.isSecureContext){
+        await navigator.clipboard.writeText(text);
+        return { ok:true, via:"clipboard" };
+      }
+    }catch(e){
+      // 失敗したら下へ
+    }
+
+    // 2) フォールバック：textareaに入れて選択→execCommand('copy')
+    try{
+      const ta = document.createElement("textarea");
+      ta.value = text;
+
+      // 画面に見えないようにしつつ、選択可能にする
+      ta.style.position = "fixed";
+      ta.style.left = "-9999px";
+      ta.style.top = "0";
+      ta.style.opacity = "0";
+      ta.setAttribute("readonly", "");
+
+      document.body.appendChild(ta);
+
+      // iOSは selectionRange 指定が効くことが多い
+      ta.focus();
+      ta.select();
+      ta.setSelectionRange(0, ta.value.length);
+
+      const ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+
+      if(ok) return { ok:true, via:"execCommand" };
+    }catch(e){
+      // それでもダメなら下へ
+    }
+
+   // 3) 最終：コピー欄をモーダルで見せて手動コピーしてもらう
+   showManualCopyModal(text);
+   return { ok:false, via:"manual" };
+  }
+
+  // 手動コピー用の簡易モーダル（長押し→コピー）
+  function showManualCopyModal(text){
+    // 既に出てたら再利用
+    let overlay = document.getElementById("manualCopyOverlay");
+    let box = document.getElementById("manualCopyBox");
+
+    if(!overlay){
+      overlay = document.createElement("div");
+      overlay.id = "manualCopyOverlay";
+      overlay.style.position = "fixed";
+      overlay.style.inset = "0";
+      overlay.style.background = "rgba(0,0,0,.35)";
+      overlay.style.zIndex = "2000";
+      overlay.style.display = "flex";
+      overlay.style.alignItems = "center";
+      overlay.style.justifyContent = "center";
+      overlay.style.padding = "14px";
+
+      const card = document.createElement("div");
+      card.style.maxWidth = "680px";
+      card.style.width = "100%";
+      card.style.background = "#fff";
+      card.style.borderRadius = "16px";
+      card.style.padding = "12px";
+      card.style.boxShadow = "0 14px 38px rgba(0,0,0,.12)";
+
+      const top = document.createElement("div");
+      top.style.display = "flex";
+      top.style.justifyContent = "space-between";
+      top.style.alignItems = "center";
+      top.style.gap = "10px";
+
+      const title = document.createElement("div");
+      title.textContent = "コピーできなかったので手動でコピーしてね";
+      title.style.fontWeight = "900";
+      title.style.fontSize = "14px";
+
+      const close = document.createElement("button");
+      close.type = "button";
+      close.textContent = "閉じる";
+      close.style.border = "1px solid rgba(0,0,0,.15)";
+      close.style.background = "#fff";
+      close.style.borderRadius = "12px";
+      close.style.padding = "8px 10px";
+      close.style.cursor = "pointer";
+      close.addEventListener("click", ()=> overlay.remove());
+
+      top.appendChild(title);
+      top.appendChild(close);
+
+      box = document.createElement("textarea");
+      box.id = "manualCopyBox";
+      box.style.width = "100%";
+      box.style.minHeight = "180px";
+      box.style.marginTop = "10px";
+      box.style.borderRadius = "12px";
+      box.style.border = "1px solid rgba(0,0,0,.15)";
+      box.style.padding = "10px";
+      box.style.fontSize = "13px";
+      box.style.lineHeight = "1.6";
+
+      const hint = document.createElement("div");
+      hint.textContent = "※長押し→「コピー」でOK";
+      hint.style.marginTop = "8px";
+      hint.style.fontSize = "12px";
+      hint.style.color = "rgba(0,0,0,.6)";
+
+      card.appendChild(top);
+      card.appendChild(box);
+      card.appendChild(hint);
+
+      overlay.appendChild(card);
+
+      // 外側クリックで閉じない（あなたの方針）
+      // overlay.addEventListener("click", e=> { if(e.target===overlay) overlay.remove(); });
+
+      document.body.appendChild(overlay);
+    }
+
+    box.value = text;
+
+    // 開いた瞬間に全選択（iOSはこれで長押ししやすい）
+    setTimeout(()=>{
+      box.focus();
+      box.select();
+      box.setSelectionRange(0, box.value.length);
+    }, 50);
+  }
+
+  // =========================================================
+  // 1) localStorageキー（データ/テーマ/マイテーマ）
+  // =========================================================
+  const DATA_KEY  = "furuyoni_match_logs_v1";
+  const THEME_KEY = "furuyoni_theme_v1";
+  const MY_THEMES_KEY = "furuyoni_theme_presets_v1";
+
+  // =========================================================
+  // 1.5) ユーザー辞書（メガミ/BAN 統一）
+  // =========================================================
+  const DICT_KEY = "tsumilog_user_dict_v1";
+
+  function loadDict(){
+    try{
+      const arr = JSON.parse(localStorage.getItem(DICT_KEY) || "[]");
+      return Array.isArray(arr) ? arr : [];
+    }catch{
+      return [];
+    }
+  }
+  function saveDict(list){
+    localStorage.setItem(DICT_KEY, JSON.stringify(list));
+  }
+  function normText(s){
+    return String(s||"").trim().replace(/\s+/g," ").normalize("NFKC");
+  }
+  function nextDictId(dict){
+    const max = dict.reduce((m,x)=>Math.max(m, Number(x.id)||0), 0);
+    return max + 1;
+  }
+  function upsertDict(text){
+    const label = String(text||"").trim();
+    const key = normText(label);
+    if(!key) return null;
+
+    const dict = loadDict();
+    const hit = dict.find(x => x.key === key);
+    if(hit) return hit;
+
+    const item = { id: nextDictId(dict), key, label };
+    dict.push(item);
+    saveDict(dict);
+    return item;
+  }
+  function renderWordDatalist(){
+    const dl = document.getElementById("wordList");
+    if(!dl) return;
+
+    const dict = loadDict();
+    dl.innerHTML = dict
+      .slice()
+      .sort((a,b)=>String(a.label).localeCompare(String(b.label),"ja"))
+      .map(x => `<option value="${escapeHtml(x.label)}"></option>`)
+      .join("");
+  }
+
+  // =========================================================
+  // 2) テーマ：プリセット + 自由編集 + 共有（JSON） + マイテーマ
+  // =========================================================
+  const DEFAULT_THEME = {
+    bg1: "rgba(14,165,233,.13)",
+    bg2: "rgba(34,197,94,.10)",
+    bgTop: "#f7fbff",
+    bgBottom: "#f7fff9",
+    text: "#1f2937",
+    muted: "#6b7280",
+    card: "rgba(255,255,255,.80)",
+    stroke: "rgba(31,41,55,.14)",
+    accent: "#ff7a2f",
+    accent2: "#ffd2a8",
+  };
+
+  const PRESETS = [
+    { name: "ミント", theme: { ...DEFAULT_THEME } },
+    {
+      name: "サンセット",
+      theme: {
+        ...DEFAULT_THEME,
+        bg1: "rgba(255,122,47,.14)",
+        bg2: "rgba(255,210,168,.18)",
+        bgTop: "#fff7f0",
+        bgBottom: "#fffdf8",
+        accent: "#ff7a2f",
+        accent2: "#ffd2a8",
+      }
+    },
+    {
+      name: "ラベンダー",
+      theme: {
+        ...DEFAULT_THEME,
+        bg1: "rgba(168,85,247,.14)",
+        bg2: "rgba(59,130,246,.10)",
+        bgTop: "#fbf7ff",
+        bgBottom: "#f7fbff",
+        accent: "#7c3aed",
+        accent2: "#c4b5fd",
+      }
+    },
+    {
+      name: "モノクロ",
+      theme: {
+        ...DEFAULT_THEME,
+        bg1: "rgba(0,0,0,.06)",
+        bg2: "rgba(0,0,0,.04)",
+        bgTop: "#f8fafc",
+        bgBottom: "#f3f4f6",
+        text: "#111827",
+        muted: "#6b7280",
+        accent: "#111827",
+        accent2: "#9ca3af",
+      }
+    }
+  ];
+
+  function normalizeTheme(t){
+    const out = {};
+    for(const k of Object.keys(DEFAULT_THEME)){
+      out[k] = (t && typeof t[k] === "string" && t[k] !== "") ? t[k] : DEFAULT_THEME[k];
+    }
+    return out;
+  }
+  function sameTheme(a,b){
+    return JSON.stringify(normalizeTheme(a)) === JSON.stringify(normalizeTheme(b));
+  }
+
+  function loadTheme(){
+    try{
+      return { ...DEFAULT_THEME, ...(JSON.parse(localStorage.getItem(THEME_KEY) || "{}")) };
+    }catch{
+      return { ...DEFAULT_THEME };
+    }
+  }
+  function saveTheme(theme){
+    localStorage.setItem(THEME_KEY, JSON.stringify(theme));
+  }
+  function applyTheme(theme){
+    const r = document.documentElement.style;
+    r.setProperty("--bg1", theme.bg1);
+    r.setProperty("--bg2", theme.bg2);
+    r.setProperty("--bgTop", theme.bgTop);
+    r.setProperty("--bgBottom", theme.bgBottom);
+    r.setProperty("--text", theme.text);
+    r.setProperty("--muted", theme.muted);
+    r.setProperty("--card", theme.card);
+    r.setProperty("--stroke", theme.stroke);
+    r.setProperty("--accent", theme.accent);
+    r.setProperty("--accent2", theme.accent2);
+  }
+
+  // 起動時にテーマ適用（保存済みがあればそれ）
+  applyTheme(loadTheme());
+
+  // --- マイテーマ保存 ---
+  function loadMyThemes(){
+    try{
+      const arr = JSON.parse(localStorage.getItem(MY_THEMES_KEY) || "[]");
+      return Array.isArray(arr) ? arr : [];
+    }catch{
+      return [];
+    }
+  }
+  function saveMyThemes(list){
+    localStorage.setItem(MY_THEMES_KEY, JSON.stringify(list));
+  }
+
+  function hexOrFallback(colorStr, fallback){
+    return (typeof colorStr === "string" && colorStr.startsWith("#")) ? colorStr : fallback;
+  }
+
+  function fillThemeInputs(theme){
+    $("t_accent").value   = hexOrFallback(theme.accent, DEFAULT_THEME.accent);
+    $("t_accent2").value  = hexOrFallback(theme.accent2, DEFAULT_THEME.accent2);
+    $("t_text").value     = hexOrFallback(theme.text, DEFAULT_THEME.text);
+    $("t_muted").value    = hexOrFallback(theme.muted, DEFAULT_THEME.muted);
+    $("t_bgTop").value    = hexOrFallback(theme.bgTop, DEFAULT_THEME.bgTop);
+    $("t_bgBottom").value = hexOrFallback(theme.bgBottom, DEFAULT_THEME.bgBottom);
+
+    $("t_bg1").value    = theme.bg1 || DEFAULT_THEME.bg1;
+    $("t_bg2").value    = theme.bg2 || DEFAULT_THEME.bg2;
+    $("t_card").value   = theme.card || DEFAULT_THEME.card;
+    $("t_stroke").value = theme.stroke || DEFAULT_THEME.stroke;
+  }
+
+  function buildThemeFromInputs(){
+    const current = loadTheme();
+    return {
+      ...current,
+      accent:   $("t_accent").value,
+      accent2:  $("t_accent2").value,
+      text:     $("t_text").value,
+      muted:    $("t_muted").value,
+      bgTop:    $("t_bgTop").value,
+      bgBottom: $("t_bgBottom").value,
+      bg1:   ($("t_bg1").value || current.bg1),
+      bg2:   ($("t_bg2").value || current.bg2),
+      card:  ($("t_card").value || current.card),
+      stroke:($("t_stroke").value || current.stroke),
+    };
+  }
+
+  // ✅ プリセット描画（builtin + myThemes）＆ active/現在表示もここで完結
+  function renderPresetButtons(){
+    const bar = $("presetBar");
+    const myThemes = loadMyThemes();
+
+    const all = [
+      ...PRESETS.map(p => ({ type:"builtin", name:p.name, theme:p.theme })),
+      ...myThemes.map(p => ({ type:"custom", name:p.name, theme:p.theme })),
+    ];
+
+    const cur = loadTheme();
+
+    bar.innerHTML = all.map((p, i) => {
+      const isActive = sameTheme(p.theme, cur);
+      const delBtn = (p.type==="custom")
+        ? `<button type="button" class="presetBtn" data-del="${p.name}"
+            style="border-color:rgba(216,58,58,.35);color:var(--danger);">削除</button>`
+        : "";
+
+      return `
+        <div style="display:flex;gap:6px;align-items:center;">
+          <button type="button" class="presetBtn ${isActive ? "active" : ""}" data-preset-index="${i}">
+            ${p.type==="custom" ? "★ " : ""}${p.name}
+          </button>
+          ${delBtn}
+        </div>
+      `;
+    }).join("");
+
+    // 現在ラベル
+    const label = $("themeCurrentLabel");
+    if(label){
+      const hit = all.find(p => sameTheme(p.theme, cur));
+      label.textContent = hit ? `現在：${hit.name}` : "現在：カスタム";
+    }
+
+    // 適用
+    bar.querySelectorAll("[data-preset-index]").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const idx = Number(btn.getAttribute("data-preset-index"));
+        const preset = all[idx];
+        if(!preset) return;
+
+        saveTheme(preset.theme);
+        applyTheme(preset.theme);
+        fillThemeInputs(preset.theme);
+
+        // active/現在表示を更新
+        renderPresetButtons();
+      });
+    });
+
+    // 削除（customのみ）
+    bar.querySelectorAll("[data-del]").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const name = btn.getAttribute("data-del");
+        if(!name) return;
+
+        const ok = confirm(`「${name}」を削除します。\n取り消せません。`);
+        if(!ok) return;
+
+        const list = loadMyThemes().filter(x => x.name !== name);
+        saveMyThemes(list);
+        renderPresetButtons();
+      });
+    });
+  }
+
+  // マイテーマ保存ボタン
+  $("saveMyThemeBtn").addEventListener("click", ()=>{
+    const name = ($("myThemeName").value || "").trim();
+    if(!name){
+      alert("保存名を入力してね");
+      return;
+    }
+
+    const theme = buildThemeFromInputs();
+    const list = loadMyThemes();
+    const exists = list.find(x => x.name === name);
+
+    if(exists){
+      const ok = confirm(`「${name}」は既にあります。\n上書きしますか？`);
+      if(!ok) return;
+      exists.theme = theme;
+    }else{
+      list.unshift({ name, theme }); // よく使うのが上に来る
+    }
+
+    saveMyThemes(list);
+
+    // いまのテーマとしても保存＆適用
+    saveTheme(theme);
+    applyTheme(theme);
+    fillThemeInputs(theme);
+
+    renderPresetButtons();
+    alert(`「${name}」として保存したよ！`);
+  });
+
+  function openThemeModal(){
+    renderPresetButtons();
+    fillThemeInputs(loadTheme());
+    $("themeModal").style.display = "flex";
+    $("themeModal").setAttribute("aria-hidden", "false");
+  }
+  function closeThemeModal(){
+    $("themeModal").style.display = "none";
+    $("themeModal").setAttribute("aria-hidden", "true");
+  }
+  $("openTheme").addEventListener("click", openThemeModal);
+  $("closeTheme").addEventListener("click", closeThemeModal);
+
+  // 手動調整 → 適用
+  $("applyThemeBtn").addEventListener("click", ()=>{
+    const theme = buildThemeFromInputs();
+    saveTheme(theme);
+    track("theme_apply", { source: "manual" });
+    applyTheme(theme);
+    renderPresetButtons();
+    track("theme_apply", { source: "manual" });
+    closeThemeModal();
+  });
+
+  // 初期に戻す
+  $("resetThemeBtn").addEventListener("click", ()=>{
+    saveTheme(DEFAULT_THEME);
+    applyTheme(DEFAULT_THEME);
+    fillThemeInputs(DEFAULT_THEME);
+    renderPresetButtons();
+    closeThemeModal();
+  });
+
+  // --- 共有（JSON） ---
+  function safeParseThemeJson(text){
+    let obj;
+    try{ obj = JSON.parse(text); }
+    catch{ return { ok:false, err:"JSONとして読み取れませんでした" }; }
+
+    if(!obj || typeof obj !== "object"){
+      return { ok:false, err:"形式が不正です（オブジェクトではありません）" };
+    }
+
+    const theme = normalizeTheme(obj);
+    for(const k of Object.keys(DEFAULT_THEME)){
+      if(typeof theme[k] !== "string" || theme[k].trim() === ""){
+        return { ok:false, err:`"${k}" が不正です` };
+      }
+    }
+    return { ok:true, theme };
+  }
+
+  $("exportThemeBtn").addEventListener("click", async ()=>{
+    const theme = normalizeTheme(loadTheme());
+    const json = JSON.stringify(theme, null, 2);
+    $("themeJsonBox").value = json;
+
+    try{
+      await navigator.clipboard.writeText(json);
+      alert("テーマJSONをコピーしました！");
+
+      track("theme_export", {
+        method: "clipboard"
+      });
+
+    }catch{
+      alert("コピーできなかったので、下の欄から手動でコピーしてください。");
+
+      track("theme_export", {
+        method: "manual"
+      });
+    }
+  });
+
+  $("importThemeBtn").addEventListener("click", ()=>{
+    const text = ($("themeJsonBox").value || "").trim();
+    if(!text){
+      alert("貼り付け欄が空です。テーマJSONを貼ってから実行してください。");
+      return;
+    }
+
+    const r = safeParseThemeJson(text);
+    if(!r.ok){
+      alert(`インポート失敗：${r.err}`);
+
+      track("theme_import", { ok: false, reason: "parse_error" });
+      return;
+    }
+
+    saveTheme(r.theme);
+    applyTheme(r.theme);
+    fillThemeInputs(r.theme);
+    renderPresetButtons();
+    alert("テーマを適用しました！");
+
+    track("theme_import", { ok: true });
+  });
+
+  // =========================================================
+  // 3) ヘルプモーダル（開閉）
+  // =========================================================
+  function openHelp(){
+    $("helpModal").style.display = "flex";
+    $("helpModal").setAttribute("aria-hidden", "false");
+  }
+  function closeHelp(){
+    $("helpModal").style.display = "none";
+    $("helpModal").setAttribute("aria-hidden", "true");
+  }
+  $("openHelp").addEventListener("click", openHelp);
+  $("closeHelp").addEventListener("click", closeHelp);
+
+  // =========================================================
+  // 4) 日付ユーティリティ
+  // =========================================================
+  const pad2 = (n) => String(n).padStart(2, "0");
+
+  function nowStr(){
+    const d = new Date();
+    return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+  }
+  function todayKey(){
+    const d = new Date();
+    return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+  }
+  function yearFromTs(ts){
+    const y = String(ts||"").slice(0,4);
+    return /^\d{4}$/.test(y) ? y : null;
+  }
+
+  // =========================================================
+  // 5) データ読み書き（試合ログ）
+  // =========================================================
+  function loadRows(){
+    try{ return JSON.parse(localStorage.getItem(DATA_KEY) || "[]"); }
+    catch{ return []; }
+  }
+  function saveRows(rows){
+    localStorage.setItem(DATA_KEY, JSON.stringify(rows));
+  }
+
+  // =========================================================
+  // 6) 表示用ユーティリティ
+  // =========================================================
+  const MATCH_TYPE_LABEL = {
+    tournament: "大会",
+    free: "フリプ",
+    rank: "ランク",
+  };
+  function matchTypeText(v){
+    return MATCH_TYPE_LABEL[v] || "—";
+  }
+  
+  function escapeHtml(s){
+    return String(s||"")
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
+  }
+  function pairName(a,b){
+    const x=(a||"").trim(), y=(b||"").trim();
+    if(x && y) return `${x}/${y}`;
+    return x || y || "?";
+  }
+
+  // 詳細モーダル用 state
+  let currentDetailId = null;
+
+  function openDetailById(id){
+    const rows = loadRows();
+    const r = rows.find(x => x.id === id);
+    if(!r) return;
+
+    currentDetailId = id;
+
+    const badges = [];
+    badges.push(`<span class="chip">🕒 ${escapeHtml(r.ts || "")}</span>`);
+
+    const resText = r.result === "WIN" ? "勝ち" : "負け";
+    badges.push(`<span class="chip">${r.result === "WIN" ? "◎" : "×"}   ${escapeHtml(resText)}</span>`);
+
+    const mt = matchTypeText(r.matchType);
+    if(mt !== "—") badges.push(`<span class="chip">📌 ${escapeHtml(mt)}</span>`);
+    if(r.turn) badges.push(`<span class="chip">${escapeHtml(r.turn)}</span>`);
+    if(r.tag)  badges.push(`<span class="chip">#${escapeHtml(r.tag)}</span>`);
+
+    $("detailMeta").innerHTML = badges.join(" ");
+
+    const myTeam = pairName(r.my1,r.my2);
+    const theirTeam = pairName(r.their1,r.their2);
+
+    const baseLines = [];
+    baseLines.push(`使用：${myTeam} vs ${theirTeam}`);
+    baseLines.push(`勝敗：${resText}`);
+    baseLines.push(`区分：${mt}`);
+    baseLines.push(`先後：${r.turn || "—"}`);
+    if(r.opponent) baseLines.push(`相手：${r.opponent}`);
+    $("detailBase").textContent = baseLines.join("\n");
+
+    $("detailBan").textContent = `自分：${r.myBan || "—"} / 相手：${r.theirBan || "—"}`;
+    $("detailPivot").textContent = r.pivot || "—";
+    $("detailNext").textContent = r.next || "—";
+
+    $("detailModal").style.display = "flex";
+    $("detailModal").setAttribute("aria-hidden", "false");
+  }
+
+  function closeDetail(){
+    $("detailModal").style.display = "none";
+    $("detailModal").setAttribute("aria-hidden", "true");
+    currentDetailId = null;
+  }
+
+  $("closeDetail").addEventListener("click", closeDetail);
+  // 外側クリックで閉じない運用ならコメントアウトのままでOK
+  // $("detailModal").addEventListener("click", (e)=>{ if(e.target === $("detailModal")) closeDetail(); });
+
+  // =========================================================
+  // 7) 勝率計算
+  // =========================================================
+  function summarizeWinRate(rows){
+    const w = rows.filter(r=>r.result==="WIN").length;
+    const l = rows.filter(r=>r.result==="LOSE").length;
+    const total = w+l;
+    const rate = total>0 ? Math.round((w/total)*100) : null;
+    return {w,l,total,rate};
+  }
+  function getTodayRows(rows){
+    const t=todayKey();
+    return rows.filter(r => (r.ts||"").startsWith(t));
+  }
+  function getYearRows(rows, yearStr){
+    const p = `${yearStr}-`;
+    return rows.filter(r => (r.ts||"").startsWith(p));
+  }
+
+  function filterByType(rows, type){
+    if(!type || type === "ALL") return rows;
+    return rows.filter(r => (r.matchType || "") === type);
+  }
+
+  // =========================================================
+  // 8) 年セレクト
+  // =========================================================
+  const TYPE_SEL_KEY = "furuyoni_type_sel_v1";
+
+  const state = {
+    selectedYear: String(new Date().getFullYear()),
+    selectedType: (localStorage.getItem(TYPE_SEL_KEY) || "ALL"),
+  };
+
+  function buildYearOptions(rows){
+    const years = new Set();
+    for(const r of rows){
+      const y = yearFromTs(r.ts);
+      if(y) years.add(y);
+    }
+    years.add(String(new Date().getFullYear()));
+    return [...years].sort((a,b)=>Number(b)-Number(a));
+  }
+  function renderYearSelect(rows){
+    const years = buildYearOptions(rows);
+    const sel = $("yearSelect");
+    sel.innerHTML = years.map(y=>`<option value="${y}">${y}年</option>`).join("");
+    if(!years.includes(state.selectedYear)) state.selectedYear = years[0] || String(new Date().getFullYear());
+    sel.value = state.selectedYear;
+  }
+
+  // =========================================================
+  // 9) 画面描画
+  // =========================================================
+  function renderHeader(rows){
+    $("countChip").textContent = `${rows.length}件`;
+
+    const s = summarizeWinRate(getTodayRows(rows));
+    let text = `今日：${s.w}勝${s.l}敗`;
+    if(s.rate !== null) text += `（${s.rate}%）`;
+    $("todayRateChip").textContent = text;
+    $("todayChip").textContent = `今日：${s.w}勝${s.l}敗`;
+  }
+
+  function renderStats(rows){
+    const base = filterByType(rows, state.selectedType);
+
+    if(base.length===0){
+      $("statsMeta").textContent="記録がありません";
+      $("rateToday").textContent="—";
+      $("rateYear").textContent="—";
+      $("rateAll").textContent="—";
+      $("rateTodayMeta").textContent="";
+      $("rateYearMeta").textContent="";
+      $("rateAllMeta").textContent="";
+      return;
+    }
+
+    const sToday = summarizeWinRate(getTodayRows(base));
+    const sYear  = summarizeWinRate(getYearRows(base, state.selectedYear));
+    const sAll   = summarizeWinRate(base);
+
+    $("statsMeta").textContent = `更新：${nowStr()}`;
+
+    $("rateToday").textContent = sToday.rate===null ? "—" : `${sToday.rate}%`;
+    $("rateYear").textContent  = sYear.rate===null  ? "—" : `${sYear.rate}%`;
+    $("rateAll").textContent   = sAll.rate===null   ? "—" : `${sAll.rate}%`;
+
+    $("rateTodayMeta").textContent = `${sToday.w}勝 / ${sToday.total}戦`;
+    $("rateYearMeta").textContent  = `${sYear.w}勝 / ${sYear.total}戦（${state.selectedYear}年 1月〜12月）`;
+    $("rateAllMeta").textContent   = `${sAll.w}勝 / ${sAll.total}戦`;
+  }
+
+  function renderRecent(rows){
+    const area = $("recentArea");
+    if(rows.length===0){
+      area.innerHTML = `<div class="empty">まだ記録がありません</div>`;
+      return;
+    }
+
+    const sorted = rows.slice().sort((a,b)=>b.id-a.id).slice(0,6);
+
+    let html = `<table><tbody>`;
+    for(const r of sorted){
+      const res = r.result==="WIN" ? "勝ち" : "負け";
+      const mark = r.result==="WIN" ? "◎" : "×";
+      const myTeam = pairName(r.my1,r.my2);
+      const theirTeam = pairName(r.their1,r.their2);
+      const mt = matchTypeText(r.matchType);
+
+      html += `
+        <tr>
+          <td style="width:92px">
+            <span class="mini">${escapeHtml((r.ts||"").slice(11))}</span><br>
+            <b>${mark} ${res}</b>
+          </td>
+          <td>
+            <span class="linklike" data-id="${r.id}">${escapeHtml(myTeam)} vs ${escapeHtml(theirTeam)}</span>
+            <span class="mini">　[${escapeHtml(mt)}]</span>
+            ${r.tag ? `<span class="mini">　#${escapeHtml(r.tag)}</span>` : ""}
+            <div class="mini">反省：${escapeHtml(r.pivot||"")}</div>
+          </td>
+          <td style="width:110px" class="mini">${escapeHtml(r.opponent||"")}</td>
+        </tr>
+      `;
+    }
+    html += `</tbody></table>`;
+    area.innerHTML = html;
+
+    area.querySelectorAll("[data-id]").forEach(el=>{
+      el.addEventListener("click", ()=>{
+        const id = Number(el.getAttribute("data-id"));
+        openDetailById(id);
+
+        track("log_open_detail", {
+          source: "recent",
+          result: r.result,
+          match_type: r.matchType || "none"
+        });
+      });
+    });
+  }
+
+  function refresh(){
+    renderWordDatalist();
+    const rows = loadRows();
+    renderYearSelect(rows);
+    const typeSel = $("typeSelect");
+    if(typeSel){
+      typeSel.value = state.selectedType;
+    }
+
+    renderHeader(rows);
+    renderStats(rows);
+    renderRecent(rows);
+    $("nowChip").textContent = nowStr();
+  }
+
+  // =========================================================
+  // 10) フォーム操作
+  // =========================================================
+  function autoGrow(el){
+    el.style.height = "auto";
+    el.style.height = (el.scrollHeight) + "px";
+  }
+  ["pivot","next"].forEach(id=>{
+    const el = $(id);
+    el.addEventListener("input", ()=>autoGrow(el));
+    autoGrow(el);
+  });
+
+  function clearFormAll(){
+    $("opponent").value="";
+    $("result").value="WIN";
+    $("my1").value="";
+    $("my2").value="";
+    $("their1").value="";
+    $("their2").value="";
+    $("myBan").value="";
+    $("theirBan").value="";
+    $("turn").value="";
+    $("matchType").value="";
+    $("tag").value="";
+    $("pivot").value="";
+    $("next").value="";
+    $("opponent").focus();
+    autoGrow($("pivot"));
+    autoGrow($("next"));
+  }
+
+  // =========================================================
+  // 11) イベント
+  // =========================================================
+  $("f").addEventListener("submit", (e)=>{
+    e.preventDefault();
+
+    // 先に入力文字列（表示用）
+    const my1 = $("my1").value.trim();
+    const my2 = $("my2").value.trim();
+    const their1 = $("their1").value.trim();
+    const their2 = $("their2").value.trim();
+    const myBan = $("myBan").value.trim();
+    const theirBan = $("theirBan").value.trim();
+
+    // 辞書に統一登録（同じ文字列なら同じID）
+    const my1Item = upsertDict(my1);
+    const my2Item = upsertDict(my2);
+    const their1Item = upsertDict(their1);
+    const their2Item = upsertDict(their2);
+    const myBanItem = upsertDict(myBan);
+    const theirBanItem = upsertDict(theirBan);
+
+    const entry = {
+      id: Date.now(),
+      ts: nowStr(),
+      opponent: $("opponent").value.trim(),
+      result: $("result").value,
+
+      // 表示は今まで通り（ユーザー入力文字列）
+      my1, my2, their1, their2,
+      myBan, theirBan,
+
+      // 辞書ID（将来の汎用化・差分判定用）
+      my1Id: my1Item?.id ?? null,
+      my2Id: my2Item?.id ?? null,
+      their1Id: their1Item?.id ?? null,
+      their2Id: their2Item?.id ?? null,
+      myBanId: myBanItem?.id ?? null,
+      theirBanId: theirBanItem?.id ?? null,
+
+      turn: $("turn").value,
+      matchType: $("matchType").value,
+      tag: $("tag").value.trim(),
+      pivot: $("pivot").value.trim(),
+      next: $("next").value.trim(),
+    };
+
+    if(!entry.my1 || !entry.my2 || !entry.their1 || !entry.their2){
+      alert("必須項目を埋めてね（自分2 / 相手2）");
+      return;
+    }
+
+    const rows = loadRows();
+    rows.push(entry);
+    saveRows(rows);
+
+    track("log_save", {
+      result: entry.result,                 // WIN / LOSE
+      match_type: entry.matchType || "none",
+      has_opponent: !!entry.opponent,
+      has_tag: !!entry.tag,
+      has_pivot: !!entry.pivot,
+      has_next: !!entry.next
+    });
+
+    // 辞書候補も更新
+    renderWordDatalist();
+
+    clearFormAll();
+    refresh();
+  });
+
+  $("clearForm").addEventListener("click", clearFormAll);
+
+  $("wipeAll").addEventListener("click", ()=>{
+    const rows = loadRows();
+    if(rows.length===0){
+      alert("削除するデータがありません。");
+      return;
+    }
+    const ok = confirm(
+      `全データ（${rows.length}件）を削除します。\n` +
+      `この操作は取り消せません。\n\n` +
+      `本当に実行しますか？`
+    );
+    if(!ok) return;
+    localStorage.removeItem(DATA_KEY);
+    refresh();
+  });
+
+  $("yearSelect").addEventListener("change", ()=>{
+    state.selectedYear = $("yearSelect").value;
+    renderStats(loadRows());
+  });
+  
+  $("typeSelect").addEventListener("change", ()=>{
+    state.selectedType = $("typeSelect").value;
+    localStorage.setItem(TYPE_SEL_KEY, state.selectedType);
+
+    // ✅ 区分が変わったら勝率の表示を更新
+    const rows = loadRows();
+    renderHeader(rows); // 今日チップ等も更新したいなら
+    renderStats(rows);
+  });
+
+  // 初期化
+  refresh();
+  setInterval(()=>{ $("nowChip").textContent = nowStr(); }, 10*1000);
+})();
+</script>
+</body>
+</html>

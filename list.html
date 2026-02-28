@@ -1,0 +1,1763 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>つみログ（一覧）</title>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-YY44S858BX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+
+  // 初期化
+  gtag('js', new Date());
+
+  // 設定（必要ならオプション追加）
+  gtag('config', 'G-YY44S858BX', {
+    // 例：開発中だけデバッグしたい場合
+    // debug_mode: true
+  });
+</script>
+
+<style>
+  :root{
+    --bg1: rgba(14,165,233,.13);
+    --bg2: rgba(34,197,94,.10);
+    --bgTop: #f7fbff;
+    --bgBottom: #f7fff9;
+
+    --text:#1f2937;
+    --muted:#6b7280;
+
+    --card: rgba(255,255,255,.80);
+    --stroke: rgba(31,41,55,.14);
+
+    --accent:#ff7a2f;
+    --accent2:#ffd2a8;
+
+    --danger:#d83a3a;
+    --ok:#1d8f5a;
+
+    --shadow:0 14px 38px rgba(0,0,0,.08);
+    --r:18px;
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family:system-ui,-apple-system,"Segoe UI","Hiragino Sans","Noto Sans JP",sans-serif;
+    color:var(--text);
+    background:
+      radial-gradient(900px 600px at 18% 6%, var(--bg1), transparent 60%),
+      radial-gradient(900px 700px at 85% 15%, var(--bg2), transparent 60%),
+      linear-gradient(180deg, var(--bgTop), var(--bgBottom));
+    min-height:100vh;
+  }
+
+  header{
+    padding:18px 16px 10px;
+    max-width:1100px;
+    margin:0 auto;
+    display:flex;
+    gap:12px;
+    align-items:flex-end;
+    justify-content:space-between;
+  }
+  .title{font-weight:900;font-size:20px}
+  .rightHead{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .chip{
+    font-size:12px;padding:4px 10px;border-radius:999px;
+    border:1px solid rgba(0,0,0,.08);background:#fff;color:var(--muted);white-space:nowrap
+  }
+  .chipBtn{font:inherit;cursor:pointer}
+
+  .wrap{max-width:1100px;margin:0 auto;padding:0 16px 22px}
+  .card{
+    background:var(--card);
+    border:1px solid var(--stroke);
+    border-radius:var(--r);
+    box-shadow:var(--shadow);
+    backdrop-filter: blur(8px);
+  }
+  .card h2{
+    font-size:14px;margin:0;padding:14px 14px 10px;
+    border-bottom:1px solid rgba(0,0,0,.06);
+    display:flex;align-items:center;justify-content:space-between;gap:10px
+  }
+
+  .tools{
+    display:flex;gap:8px;align-items:center;flex-wrap:wrap;
+    margin:10px 14px 10px;
+  }
+  input, select, textarea{
+    padding:10px;border-radius:12px;border:1px solid rgba(0,0,0,.12);background:#fff;
+    font:inherit;
+  }
+  textarea{resize:vertical;min-height:120px;line-height:1.6}
+  .tools input{min-width:260px;max-width:420px;flex:1}
+
+  button{border:0;border-radius:12px;padding:10px 12px;font-weight:900;cursor:pointer}
+  .ghost{background:#fff;border:1px solid rgba(0,0,0,.12);color:var(--text)}
+  .primary{background:linear-gradient(90deg,var(--accent),var(--accent2));color:#fff}
+  .dangerBtn{background:#fff;border:1px solid rgba(216,58,58,.35);color:var(--danger)}
+  .miniBtn{padding:7px 10px;border-radius:999px;font-weight:900}
+
+  .pager{
+    display:flex;gap:8px;align-items:center;flex-wrap:wrap;
+    margin: 8px 14px 6px;
+  }
+  .pager .mini{margin-left:auto;color:var(--muted);font-size:12px}
+  .pager button{
+    padding:8px 10px;border-radius:999px;background:#fff;border:1px solid rgba(0,0,0,.12);font-weight:900
+  }
+  .pager button[disabled]{opacity:.45;cursor:not-allowed}
+
+  table{width:calc(100% - 28px);margin:0 14px 14px;border-collapse:separate;border-spacing:0 8px}
+  td{
+    background:#fff;border:1px solid rgba(0,0,0,.08);
+    padding:10px;font-size:13px;vertical-align:top
+  }
+  td:first-child{border-radius:12px 0 0 12px}
+  td:last-child{border-radius:0 12px 12px 0}
+
+  .mini{color:var(--muted);font-size:12px}
+  .linklike{color:var(--accent);text-decoration:underline;cursor:pointer;font-weight:900}
+  .empty{color:var(--muted);padding:12px 14px 14px;font-size:13px}
+
+  /* =========================
+    モーダル共通（ヘルプ/詳細）
+  ========================= */
+  .modal{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.35);
+    padding:16px;
+    z-index:999;
+    align-items:center;
+    justify-content:center;
+  }
+  .modal .inner{
+    max-width:760px;
+    margin:40px auto;
+    padding:14px;
+    max-height: calc(100vh - 32px);
+    overflow:auto;
+  }
+  .modalTop{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    margin-bottom:10px;
+  }
+  .modalTitle{
+    margin:0;
+    font-size:16px;
+    font-weight:900;
+  }
+  .helpBox, .detailBox{
+    background:#fff;
+    border:1px solid rgba(0,0,0,.08);
+    border-radius:14px;
+    padding:12px;
+    line-height:1.7;
+    font-size:14px;
+  }
+
+/* =========================
+   詳細モーダル専用レイアウト
+   （ヘルプには影響させない）
+========================= */
+
+  /* 詳細モーダルは上寄せ固定 */
+  #detailModal{
+    align-items: flex-start;   /* 上固定 */
+    justify-content: center;
+  }
+
+  /* 詳細モーダルのカードサイズ固定 */
+  #detailModal .inner{
+    width: min(760px, calc(100vw - 32px));
+    height: min(78vh, calc(100vh - 32px));
+    margin: 24px 0 0;           /* 頭の位置固定 */
+
+    display: flex;
+    flex-direction: column;
+
+    overflow: hidden;           /* スクロールは中だけ */
+  }
+
+  /* 詳細モーダルの中身だけスクロール */
+  #detailModal .detailBox{
+    flex: 1;
+    overflow: auto;
+    min-height: 0;              /* flex内スクロール安定 */
+}
+
+  /* 詳細：上部バッジ */
+  .detailMeta{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-bottom:10px;
+  }
+  .badge{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    padding:4px 10px;
+    border-radius:999px;
+    background:#fff;
+    border:1px solid rgba(0,0,0,.10);
+    font-size:12px;
+    color:var(--muted);
+    white-space:nowrap;
+  }
+  .tagBadge{
+    color: var(--text);
+    border-color: rgba(255,122,47,.35);
+  }
+  .winBadge{
+    color: var(--ok);
+    border-color: rgba(29,143,90,.25);
+  }
+  .loseBadge{
+    color: var(--danger);
+    border-color: rgba(216,58,58,.25);
+  }
+
+  .detailGrid{display:grid;gap:10px}
+  .cap{font-size:12px;color:var(--muted);margin-bottom:6px}
+  .pre{white-space:pre-wrap;word-break:break-word}
+
+  /* 詳細：編集フィールド */
+  .editGrid{display:grid;gap:10px;margin-top:10px}
+  .editGrid .row{display:flex;flex-direction:column;gap:6px}
+  .twoCol{
+    display:grid;
+    gap:10px;
+    grid-template-columns:1fr 1fr;
+  }
+  @media (max-width: 720px){
+    .twoCol{grid-template-columns:1fr}
+  }
+
+  /* 前へ/次へボタン */
+  .navBtns{display:flex;gap:8px;flex-wrap:wrap}
+  .navBtns button{border-radius:999px;padding:8px 10px}
+  .navBtns button[disabled]{opacity:.45;cursor:not-allowed}
+
+  /* 一覧：操作列 */
+  .actions{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+</style>
+</head>
+
+<body>
+<header>
+  <div class="title">🌱 つみログ</div>
+  <div class="rightHead">
+    <a class="chip" href="index.html" style="text-decoration:none;color:inherit;">← 入力へ</a>
+    <button class="chip chipBtn" id="openHelp" type="button">❓ ヘルプ</button>
+    <button class="chip chipBtn" id="openData" type="button">📦 エクスポート/インポート</button>
+    <div class="chip" title="サーバー送信はありません。ブラウザ内に保存されます。">🔒 ローカル保存</div>
+    <div class="chip" id="countChip">0件</div>
+  </div>
+</header>
+
+<div class="wrap">
+  <section class="card">
+    <h2>
+      <span>一覧（30件ごと）</span>
+      <span class="chip" id="todayChip">今日：0勝0敗</span>
+    </h2>
+
+    <div class="tools">
+      <input id="q" placeholder="検索（メガミ/相手/タグ/反省点/BAN）" />
+      <select id="filter">
+        <option value="ALL">全て</option>
+        <option value="WIN">勝ちのみ</option>
+        <option value="LOSE">負けのみ</option>
+        <option value="TODAY">今日のみ</option>
+      </select>
+      <select id="typeFilter" aria-label="区分フィルタ">
+        <option value="ALL">区分：なし（全部）</option>
+        <option value="tournament">区分：大会</option>
+        <option value="free">区分：フリプ</option>
+        <option value="rank">区分：ランク</option>
+      </select>
+    </div>
+
+    <div class="pager" id="pager"></div>
+    <div id="listArea"></div>
+  </section>
+</div>
+
+<!-- ヘルプモーダル -->
+<div id="helpModal" class="modal" aria-hidden="true">
+  <div class="card inner">
+    <div class="modalTop">
+      <h3 class="modalTitle">❓ 使い方</h3>
+      <button class="ghost" type="button" id="closeHelp">閉じる</button>
+    </div>
+
+    <div class="helpBox">
+      <ul style="margin:0 0 0 18px;">
+        <li>検索・フィルタ・30件ごとのページングができます。</li>
+        <li>反省点は一覧では<b>1行目だけ</b>表示します（見やすさ優先）。</li>
+        <li>行のタイトル（メガミ）をクリックすると<b>詳細</b>が表示されます。</li>
+        <li>一覧の「編集」から編集モードで開けます。</li>
+        <li>編集途中に「前へ/次へ」「閉じる」を押すと、未保存変更があれば確認が出ます。</li>
+        <li>⚠️ 端末/ブラウザを変えると引き継げません。</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- 詳細モーダル -->
+<div id="detailModal" class="modal" aria-hidden="true">
+  <div class="card inner">
+    <div class="modalTop">
+      <h3 class="modalTitle">＜試合の詳細＞</h3>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <div class="navBtns">
+          <button class="ghost" type="button" id="prevBtn">← 前へ</button>
+          <button class="ghost" type="button" id="nextBtn">次へ →</button>
+        </div>
+        <button class="ghost" type="button" id="detailEditBtn">編集</button>
+        <button class="dangerBtn" type="button" id="detailDeleteBtn">削除</button>
+        <button class="ghost" type="button" id="closeDetail">閉じる</button>
+      </div>
+    </div>
+
+    <div class="detailBox">
+      <div class="detailMeta" id="detailMeta"></div>
+
+      <!-- 表示モード -->
+      <div id="detailView">
+        <div class="detailGrid">
+          <div>
+            <div class="cap">基本情報</div>
+            <div class="pre" id="detailBase">—</div>
+          </div>
+
+          <div>
+            <div class="cap">BAN</div>
+            <div class="pre" id="detailBan">—</div>
+          </div>
+
+          <div>
+            <div class="cap">反省点</div>
+            <div class="pre" id="detailPivot">—</div>
+          </div>
+
+          <div>
+            <div class="cap">改善点</div>
+            <div class="pre" id="detailNext">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 編集モード -->
+      <div id="detailEdit" style="display:none;">
+        <div class="editGrid">
+          <div class="twoCol">
+            <div class="row">
+              <div class="cap">対戦区分</div>
+              <select id="editMatchType">
+                <option value="">—</option>
+                <option value="tournament">大会</option>
+                <option value="free">フリプ</option>
+                <option value="rank">ランク</option>
+              </select>
+            </div>
+            <div class="row">
+              <div class="cap">勝敗</div>
+              <select id="editResult">
+                <option value="WIN">勝ち</option>
+                <option value="LOSE">負け</option>
+              </select>
+            </div>
+
+            <div class="row">
+              <div class="cap">先後</div>
+              <select id="editTurn">
+                <option value="">—</option>
+                <option value="先手">先手</option>
+                <option value="後手">後手</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="twoCol">
+            <div class="row">
+              <div class="cap">自分メガミ</div>
+              <input id="editMy1" list="wordList" placeholder="例：ユリナ">
+              <input id="editMy2" list="wordList" placeholder="例：サイネ">
+            </div>
+
+            <div class="row">
+              <div class="cap">相手メガミ</div>
+              <input id="editTheir1" list="wordList" placeholder="例：ヒミカ">
+              <input id="editTheir2" list="wordList" placeholder="例：トコヨ">
+            </div>
+          </div>
+
+          <div class="twoCol">
+            <div class="row">
+              <div class="cap">BANされたメガミ</div>
+              <input id="editMyBan" list="wordList" placeholder="例：オボロ">
+            </div>
+
+            <div class="row">
+              <div class="cap">BANしたメガミ</div>
+              <input id="editTheirBan" list="wordList" placeholder="例：ホノカ">
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="cap">タグ</div>
+            <input id="editTag" placeholder="例：リーサル急ぎ / 間合ミス">
+          </div>
+
+          <div class="row">
+            <div class="cap">反省点（任意）</div>
+            <textarea id="editPivot" placeholder="反省点"></textarea>
+          </div>
+
+          <div class="row">
+            <div class="cap">改善点（任意）</div>
+            <textarea id="editNext" placeholder="改善点"></textarea>
+          </div>
+
+          <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
+            <button class="ghost" type="button" id="editCancelBtn">キャンセル</button>
+            <button class="primary" type="button" id="editSaveBtn">保存</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =========================
+  データモーダル（エクスポート / インポート）
+  ※ list.html（管理側）にだけ置く
+========================= -->
+<div id="dataModal" class="modal" aria-hidden="true">
+  <div class="card inner">
+    <div class="modalTop">
+      <h3 class="modalTitle">📦 データ（エクスポート / インポート）</h3>
+      <button class="ghost" type="button" id="closeData">閉じる</button>
+    </div>
+
+    <div class="helpBox">
+      <h4 style="margin:0 0 6px;">エクスポート（統一JSON）</h4>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <button class="ghost" type="button" id="exportDataBtn">📤 ダウンロード</button>
+        <span class="mini">※ localStorageの記録を統一JSONに変換します</span>
+      </div>
+    </div>
+
+    <div class="helpBox" style="margin-top:10px;">
+      <h4 style="margin:0 0 6px;">インポート（統一JSON / B方式）</h4>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <input type="file" id="importFile" accept="application/json,.json" />
+        <button class="ghost" type="button" id="importRunBtn">📥 読み込み</button>
+      </div>
+
+      <div class="mini" id="importSummary" style="margin-top:10px;"></div>
+
+      <!-- 重複候補（保留）表示 -->
+      <div id="dupArea" style="margin-top:10px;"></div>
+
+      <div id="applyArea" style="display:none; margin-top:10px; justify-content:flex-end; gap:8px;">
+        <button class="primary" type="button" id="applyResolvedBtn">確定して保存</button>
+      </div>
+
+      <div class="mini" style="margin-top:8px;">
+        ※重複候補は保留されます。「既存を残す / インポートを採用 / 両方残す」を選んでから確定します。
+      </div>
+    </div>
+  </div>
+</div>
+
+      <!-- メガミ/BAN 共通のユーザー辞書（候補） -->
+      <datalist id="wordList"></datalist>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+
+  function track(name, params={}){
+    // gtag 未ロードでも壊れないように
+    if(typeof window.gtag === "function"){
+      window.gtag("event", name, params);
+    }
+  }
+
+  // =========================================================
+  //  iPhone/Safari対策
+  // =========================================================
+  async function copyText(text){
+    // 1) まずは Clipboard API（https / ユーザー操作が必要なことが多い）
+    try{
+      if(navigator.clipboard && window.isSecureContext){
+        await navigator.clipboard.writeText(text);
+        return { ok:true, via:"clipboard" };
+      }
+    }catch(e){
+      // 失敗したら下へ
+    }
+
+    // 2) フォールバック：textareaに入れて選択→execCommand('copy')
+    try{
+      const ta = document.createElement("textarea");
+      ta.value = text;
+
+      // 画面に見えないようにしつつ、選択可能にする
+      ta.style.position = "fixed";
+      ta.style.left = "-9999px";
+      ta.style.top = "0";
+      ta.style.opacity = "0";
+      ta.setAttribute("readonly", "");
+
+      document.body.appendChild(ta);
+
+      // iOSは selectionRange 指定が効くことが多い
+      ta.focus();
+      ta.select();
+      ta.setSelectionRange(0, ta.value.length);
+
+      const ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+
+      if(ok) return { ok:true, via:"execCommand" };
+    }catch(e){
+      // それでもダメなら下へ
+    }
+
+   // 3) 最終：コピー欄をモーダルで見せて手動コピーしてもらう
+   showManualCopyModal(text);
+   return { ok:false, via:"manual" };
+  }
+
+  // 手動コピー用の簡易モーダル（長押し→コピー）
+  function showManualCopyModal(text){
+    // 既に出てたら再利用
+    let overlay = document.getElementById("manualCopyOverlay");
+    let box = document.getElementById("manualCopyBox");
+
+    if(!overlay){
+      overlay = document.createElement("div");
+      overlay.id = "manualCopyOverlay";
+      overlay.style.position = "fixed";
+      overlay.style.inset = "0";
+      overlay.style.background = "rgba(0,0,0,.35)";
+      overlay.style.zIndex = "2000";
+      overlay.style.display = "flex";
+      overlay.style.alignItems = "center";
+      overlay.style.justifyContent = "center";
+      overlay.style.padding = "14px";
+
+      const card = document.createElement("div");
+      card.style.maxWidth = "680px";
+      card.style.width = "100%";
+      card.style.background = "#fff";
+      card.style.borderRadius = "16px";
+      card.style.padding = "12px";
+      card.style.boxShadow = "0 14px 38px rgba(0,0,0,.12)";
+
+      const top = document.createElement("div");
+      top.style.display = "flex";
+      top.style.justifyContent = "space-between";
+      top.style.alignItems = "center";
+      top.style.gap = "10px";
+
+      const title = document.createElement("div");
+      title.textContent = "コピーできなかったので手動でコピーしてね";
+      title.style.fontWeight = "900";
+      title.style.fontSize = "14px";
+
+      const close = document.createElement("button");
+      close.type = "button";
+      close.textContent = "閉じる";
+      close.style.border = "1px solid rgba(0,0,0,.15)";
+      close.style.background = "#fff";
+      close.style.borderRadius = "12px";
+      close.style.padding = "8px 10px";
+      close.style.cursor = "pointer";
+      close.addEventListener("click", ()=> overlay.remove());
+
+      top.appendChild(title);
+      top.appendChild(close);
+
+      box = document.createElement("textarea");
+      box.id = "manualCopyBox";
+      box.style.width = "100%";
+      box.style.minHeight = "180px";
+      box.style.marginTop = "10px";
+      box.style.borderRadius = "12px";
+      box.style.border = "1px solid rgba(0,0,0,.15)";
+      box.style.padding = "10px";
+      box.style.fontSize = "13px";
+      box.style.lineHeight = "1.6";
+
+      const hint = document.createElement("div");
+      hint.textContent = "※長押し→「コピー」でOK";
+      hint.style.marginTop = "8px";
+      hint.style.fontSize = "12px";
+      hint.style.color = "rgba(0,0,0,.6)";
+
+      card.appendChild(top);
+      card.appendChild(box);
+      card.appendChild(hint);
+
+      overlay.appendChild(card);
+
+      // 外側クリックで閉じない（あなたの方針）
+      // overlay.addEventListener("click", e=> { if(e.target===overlay) overlay.remove(); });
+
+      document.body.appendChild(overlay);
+    }
+
+    box.value = text;
+
+    // 開いた瞬間に全選択（iOSはこれで長押ししやすい）
+    setTimeout(()=>{
+      box.focus();
+      box.select();
+      box.setSelectionRange(0, box.value.length);
+    }, 50);
+  }
+
+  const DATA_KEY  = "furuyoni_match_logs_v1";
+  const THEME_KEY = "furuyoni_theme_v1";
+  const PER_PAGE  = 30;
+
+  // =========================================================
+  // 12) エクスポート / インポート（統一JSON）
+  // =========================================================
+  const DEFAULT_VISIBILITY = "public"; // 今はUIが無いので固定
+
+  function newUid(){
+    if(crypto?.randomUUID) return crypto.randomUUID();
+    return "uid_" + Date.now() + "_" + Math.random().toString(36).slice(2,10);
+  }
+
+  // 既存データに uid が無ければ付与（永続化）
+  function ensureUids(){
+    const rows = loadRows();
+    let changed = false;
+    for(const r of rows){
+      if(!r.uid){
+        r.uid = newUid();
+        changed = true;
+      }
+    }
+    if(changed) saveRows(rows);
+    return rows;
+  }
+
+  // turn: 内部（先手/後手） ⇄ 統一（first/second）
+  function toUnifiedTurn(v){
+    if(v === "先手") return "first";
+    if(v === "後手") return "second";
+    return null;
+  }
+  function fromUnifiedTurn(v){
+    if(v === "first") return "先手";
+    if(v === "second") return "後手";
+    return "";
+  }
+
+  // ts: "YYYY-MM-DD HH:mm" → created_at: "YYYY-MM-DDTHH:mm:00+09:00"
+  function toIsoFromTs(ts){
+    if(!ts) return null;
+    const m = ts.match(/^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2})$/);
+    if(!m) return null;
+    return `${m[1]}T${m[2]}:00+09:00`;
+  }
+  function toDateFromTs(ts){
+    const d = (ts || "").slice(0,10);
+    return /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : null;
+  }
+
+  // 内部 row → 統一JSON
+  function rowToUnified(r){
+    return {
+      id: r.uid || newUid(),
+      created_at: toIsoFromTs(r.ts) || (new Date()).toISOString(),
+      date: toDateFromTs(r.ts),
+
+      result: r.result, // WIN/LOSE
+
+      // ここは今の運用に合わせて「文字列のまま」出します
+      my1: r.my1 || null,
+      my2: r.my2 || null,
+      their1: r.their1 || null,
+      their2: r.their2 || null,
+
+      my_ban: r.myBan || null,
+      their_ban: r.theirBan || null,
+
+      match_type: r.matchType || null, // tournament/free/rank
+      turn: toUnifiedTurn(r.turn),
+
+      tag: r.tag || null,
+      pivot: r.pivot || null,
+      next: r.next || null,
+
+      visibility: DEFAULT_VISIBILITY,
+    };
+  }
+
+  // 統一JSON → 内部 row
+  function unifiedToRow(u){
+    // created_at があれば ts に寄せる
+    let ts = null;
+    if(typeof u.created_at === "string"){
+      const v = u.created_at.replace("Z","+00:00");
+      // "YYYY-MM-DDTHH:mm" までを "YYYY-MM-DD HH:mm" に
+      const head = v.slice(0,16);
+      const cand = head.replace("T"," ");
+      if(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(cand)) ts = cand;
+    }
+    if(!ts){
+      ts = (u.date || todayKey()) + " 00:00";
+    }
+
+    // 既存UIのソート（b.id-a.id）維持のため、数値idは別で作る
+    return {
+      id: Date.now() + Math.floor(Math.random()*1000),
+      uid: String(u.id || newUid()),
+
+      ts,
+      opponent: "",
+
+      result: u.result === "WIN" ? "WIN" : "LOSE",
+
+      my1: u.my1 || "",
+      my2: u.my2 || "",
+      their1: u.their1 || "",
+      their2: u.their2 || "",
+      myBan: u.my_ban || "",
+      theirBan: u.their_ban || "",
+
+      turn: fromUnifiedTurn(u.turn),
+      matchType: u.match_type || "",
+
+      tag: u.tag || "",
+      pivot: u.pivot || "",
+      next: u.next || "",
+    };
+  }
+
+  // 重複候補判定用：強め一致（誤爆しにくい）
+  function norm(s){ return String(s||"").trim().normalize("NFKC"); }
+  function sortPair(a,b){
+    const x = norm(a), y = norm(b);
+    return [x,y].sort((p,q)=>p.localeCompare(q,"ja"));
+  }
+  function signatureFromRow(r){
+    const date = (r.ts || "").slice(0,10);
+    const [myA,myB] = sortPair(r.my1, r.my2);
+    const [thA,thB] = sortPair(r.their1, r.their2);
+    return [
+      date,
+      r.result || "",
+      r.matchType || "",
+      toUnifiedTurn(r.turn) || "",
+      myA,myB,thA,thB
+    ].join("|");
+  }
+  function signatureFromUnified(u){
+    const date = norm(u.date);
+    const [myA,myB] = sortPair(u.my1, u.my2);
+    const [thA,thB] = sortPair(u.their1, u.their2);
+    return [
+      date,
+      u.result || "",
+      u.match_type || "",
+      (u.turn || ""),
+      myA,myB,thA,thB
+    ].join("|");
+  }
+
+  // import state
+  let pendingDups = [];     // { existingIndex, existingRow, importedRow, choice }
+  let pendingAdds = [];     // row[]
+  let pendingUpdates = [];  // { index, row }[]
+  let lastImportStats = null;
+
+  function classifyImport(unifiedList){
+    const rows = ensureUids();
+
+    const uidToIndex = new Map();
+    rows.forEach((r,i)=> uidToIndex.set(String(r.uid), i));
+
+    const sigToIndices = new Map();
+    rows.forEach((r,i)=>{
+      const sig = signatureFromRow(r);
+      if(!sigToIndices.has(sig)) sigToIndices.set(sig, []);
+      sigToIndices.get(sig).push(i);
+    });
+
+    pendingDups = [];
+    pendingAdds = [];
+    pendingUpdates = [];
+
+    for(const u of unifiedList){
+      const uid = String(u?.id || "");
+      const sig = signatureFromUnified(u);
+
+      // 1) 同じuid → 更新（即上書き候補）
+      if(uid && uidToIndex.has(uid)){
+        const idx = uidToIndex.get(uid);
+        const newRow = unifiedToRow(u);
+        // UI用の数値idは保持
+        newRow.id = rows[idx].id;
+        // uidも保持（同じ）
+        newRow.uid = rows[idx].uid;
+        pendingUpdates.push({ index: idx, row: { ...rows[idx], ...newRow }});
+        continue;
+      }
+
+      // 2) uidは違うが署名一致 → 重複候補として保留
+      const hit = sigToIndices.get(sig);
+      if(hit && hit.length){
+        const existingIndex = hit[0];
+        const importedRow = unifiedToRow(u);
+
+        pendingDups.push({
+          existingIndex,
+          existingRow: rows[existingIndex],
+          importedRow,
+          // 初期は安全側
+          choice: "keep_existing" // keep_existing / take_import / keep_both
+        });
+        continue;
+      }
+
+      // 3) それ以外 → 追加
+      pendingAdds.push(unifiedToRow(u));
+    }
+
+    lastImportStats = {
+      total: unifiedList.length,
+      adds: pendingAdds.length,
+      updates: pendingUpdates.length,
+      dups: pendingDups.length,
+    };
+  }
+
+  function rowLabel(r){
+    const date = (r.ts||"").slice(0,10);
+    const res = r.result === "WIN" ? "勝ち" : "負け";
+    const mt = matchTypeText(r.matchType);
+    const turn = r.turn || "—";
+    return `${date} / ${res} / ${mt} / ${turn}\n${pairName(r.my1,r.my2)} vs ${pairName(r.their1,r.their2)}`;
+  }
+
+  function renderDupResolver(){
+    const sum = $("importSummary");
+    const dupArea = $("dupArea");
+    const applyArea = $("applyArea");
+
+    if(!lastImportStats){
+      sum.textContent = "";
+      dupArea.innerHTML = "";
+      applyArea.style.display = "none";
+      return;
+    }
+
+    sum.textContent =
+      `読み込み：${lastImportStats.total}件 / 追加：${lastImportStats.adds}件 / 更新：${lastImportStats.updates}件 / 重複候補：${lastImportStats.dups}件`;
+
+    applyArea.style.display = "flex";
+
+    if(pendingDups.length === 0){
+      dupArea.innerHTML = `<div class="mini">重複候補はありません。</div>`;
+      return;
+    }
+
+    dupArea.innerHTML = pendingDups.map((d,i)=>{
+      const a = rowLabel(d.existingRow);
+      const b = rowLabel(d.importedRow);
+      return `
+        <div style="border:1px solid rgba(0,0,0,.08);border-radius:14px;padding:12px;background:#fff;margin-top:10px;">
+          <div class="cap">重複候補 ${i+1}</div>
+
+          <div class="mini">【既存】</div>
+          <pre style="margin:6px 0 10px; white-space:pre-wrap;">${escapeHtml(a)}</pre>
+
+          <div class="mini">【インポート】</div>
+          <pre style="margin:6px 0 10px; white-space:pre-wrap;">${escapeHtml(b)}</pre>
+
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <label class="mini"><input type="radio" name="dup_${i}" value="keep_existing" ${d.choice==="keep_existing"?"checked":""}> 既存を残す</label>
+            <label class="mini"><input type="radio" name="dup_${i}" value="take_import" ${d.choice==="take_import"?"checked":""}> インポートを採用（既存置換）</label>
+            <label class="mini"><input type="radio" name="dup_${i}" value="keep_both" ${d.choice==="keep_both"?"checked":""}> 両方残す</label>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    pendingDups.forEach((d,i)=>{
+      dupArea.querySelectorAll(`input[name="dup_${i}"]`).forEach(el=>{
+        el.addEventListener("change", ()=>{ d.choice = el.value; });
+      });
+    });
+  }
+
+  function applyImportResolved(){
+    const rows = ensureUids();
+
+    // 1) 更新（uid一致）
+    for(const u of pendingUpdates){
+      rows[u.index] = u.row;
+    }
+
+    // 2) 重複候補（B方式：保留→選択）
+    for(const d of pendingDups){
+      if(d.choice === "keep_existing"){
+        continue;
+      }
+      if(d.choice === "take_import"){
+        // 既存の数値idとuidを保持（同一試合として“身元”を変えない）
+        const keepId  = rows[d.existingIndex].id;
+        const keepUid = rows[d.existingIndex].uid;
+
+        const replaced = { ...rows[d.existingIndex], ...d.importedRow };
+        replaced.id = keepId;
+        replaced.uid = keepUid;
+
+        rows[d.existingIndex] = replaced;
+        continue;
+      }
+      if(d.choice === "keep_both"){
+        rows.push(d.importedRow);
+        continue;
+      }
+    }
+
+    // 3) 追加
+    for(const a of pendingAdds){
+      rows.push(a);
+    }
+
+    saveRows(rows);
+
+    // cleanup
+    pendingDups = [];
+    pendingAdds = [];
+    pendingUpdates = [];
+    lastImportStats = null;
+
+    render();
+    alert("インポートを確定しました！");
+  }
+
+  // データモーダル open/close
+  function openData(){
+    $("dataModal").style.display = "flex";
+    $("dataModal").setAttribute("aria-hidden","false");
+    $("importSummary").textContent = "";
+    $("dupArea").innerHTML = "";
+    $("applyArea").style.display = "none";
+    // file input リセット
+    const f = $("importFile");
+    if(f) f.value = "";
+  }
+  function closeData(){
+    $("dataModal").style.display = "none";
+    $("dataModal").setAttribute("aria-hidden","true");
+  }
+  $("openData").addEventListener("click", openData);
+  $("closeData").addEventListener("click", closeData);
+
+  // エクスポート：統一JSON（配列）をダウンロード
+  $("exportDataBtn").addEventListener("click", ()=>{
+    const rows = ensureUids();
+    const unified = rows.map(rowToUnified);
+    const blob = new Blob([JSON.stringify(unified, null, 2)], { type:"application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `tsumilog_export_${todayKey()}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+
+  // インポート：分類→（重複候補は保留表示）→確定
+  $("importRunBtn").addEventListener("click", async ()=>{
+    const file = $("importFile")?.files?.[0];
+    if(!file){
+      alert("JSONファイルを選んでね");
+      return;
+    }
+
+    const text = await file.text();
+    let data;
+    try{ data = JSON.parse(text); }
+    catch{ alert("JSONとして読み取れませんでした"); return; }
+
+    // 配列 or {items:[...]} 両対応
+    const list = Array.isArray(data) ? data : (Array.isArray(data?.items) ? data.items : null);
+    if(!list){
+      alert("形式が違います（統一JSONの配列を入れてね）");
+      return;
+    }
+
+    classifyImport(list);
+    renderDupResolver();
+
+    // 確定ボタン表示
+    $("applyArea").style.display = "flex";
+  });
+
+  $("applyResolvedBtn").addEventListener("click", ()=>{
+    applyImportResolved();
+    closeData();
+  });
+
+  // =========================================================
+  // 1.5) ユーザー辞書（メガミ/BAN 統一）
+  // =========================================================
+  const DICT_KEY = "tsumilog_user_dict_v1";
+
+  function loadDict(){
+    try{
+      const arr = JSON.parse(localStorage.getItem(DICT_KEY) || "[]");
+      return Array.isArray(arr) ? arr : [];
+    }catch{
+      return [];
+    }
+  }
+  function saveDict(list){
+    localStorage.setItem(DICT_KEY, JSON.stringify(list));
+  }
+  function normText(s){
+    return String(s||"").trim().replace(/\s+/g," ").normalize("NFKC");
+  }
+  function nextDictId(dict){
+    const max = dict.reduce((m,x)=>Math.max(m, Number(x.id)||0), 0);
+    return max + 1;
+  }
+  function upsertDict(text){
+    const label = String(text||"").trim();
+    const key = normText(label);
+    if(!key) return null;
+
+    const dict = loadDict();
+    const hit = dict.find(x => x.key === key);
+    if(hit) return hit;
+
+    const item = { id: nextDictId(dict), key, label };
+    dict.push(item);
+    saveDict(dict);
+    return item;
+  }
+  function renderWordDatalist(){
+    const dl = document.getElementById("wordList");
+    if(!dl) return;
+
+    const dict = loadDict();
+    dl.innerHTML = dict
+      .slice()
+      .sort((a,b)=>String(a.label).localeCompare(String(b.label),"ja"))
+      .map(x => `<option value="${escapeHtml(x.label)}"></option>`)
+      .join("");
+  }
+
+  /* =========================
+    テーマ反映（CSS変数を書き換える）
+  ========================= */
+  const DEFAULT_THEME = {
+    bg1: "rgba(14,165,233,.13)",
+    bg2: "rgba(34,197,94,.10)",
+    bgTop: "#f7fbff",
+    bgBottom: "#f7fff9",
+    text: "#1f2937",
+    muted: "#6b7280",
+    card: "rgba(255,255,255,.80)",
+    stroke: "rgba(31,41,55,.14)",
+    accent: "#ff7a2f",
+    accent2: "#ffd2a8",
+  };
+  function loadTheme(){
+    try{
+      return { ...DEFAULT_THEME, ...(JSON.parse(localStorage.getItem(THEME_KEY) || "{}")) };
+    }catch{
+      return { ...DEFAULT_THEME };
+    }
+  }
+  function applyTheme(theme){
+    const r = document.documentElement.style;
+    r.setProperty("--bg1", theme.bg1);
+    r.setProperty("--bg2", theme.bg2);
+    r.setProperty("--bgTop", theme.bgTop);
+    r.setProperty("--bgBottom", theme.bgBottom);
+    r.setProperty("--text", theme.text);
+    r.setProperty("--muted", theme.muted);
+    r.setProperty("--card", theme.card);
+    r.setProperty("--stroke", theme.stroke);
+    r.setProperty("--accent", theme.accent);
+    r.setProperty("--accent2", theme.accent2);
+  }
+  applyTheme(loadTheme());
+
+  /* =========================
+    ヘルプモーダル（開閉）
+  ========================= */
+  function openHelp(){
+    $("helpModal").style.display = "flex";
+    $("helpModal").setAttribute("aria-hidden", "false");
+  }
+  function closeHelp(){
+    $("helpModal").style.display = "none";
+    $("helpModal").setAttribute("aria-hidden", "true");
+  }
+  $("openHelp").addEventListener("click", openHelp);
+  $("closeHelp").addEventListener("click", closeHelp);
+
+  /* =========================
+    データ（localStorage）
+  ========================= */
+  function loadRows(){
+    try{ return JSON.parse(localStorage.getItem(DATA_KEY) || "[]"); }
+    catch{ return []; }
+  }
+  function saveRows(rows){
+    localStorage.setItem(DATA_KEY, JSON.stringify(rows));
+  }
+
+  /* =========================
+    日付（今日）
+  ========================= */
+  const pad2 = (n) => String(n).padStart(2, "0");
+  function todayKey(){
+    const d = new Date();
+    return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+  }
+
+  /* =========================
+    表示ユーティリティ
+  ========================= */
+  const MATCH_TYPE_LABEL = {
+    tournament: "大会",
+    free: "フリプ",
+    rank: "ランク",
+  };
+  function matchTypeText(v){
+    return MATCH_TYPE_LABEL[v] || "—";
+  }
+  
+  function escapeHtml(s){
+    return String(s||"")
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
+  }
+  function pairName(a,b){
+    const x=(a||"").trim(), y=(b||"").trim();
+    if(x && y) return `${x}/${y}`;
+    return x || y || "?";
+  }
+  function firstLine(text){
+    const s = String(text || "").replace(/\r\n/g, "\n");
+    const line = s.split("\n")[0] || "";
+    const max = 60;
+    return line.length > max ? line.slice(0, max) + "…" : line;
+  }
+  function hasMoreLines(text){
+    const s = String(text || "").replace(/\r\n/g, "\n");
+    return s.includes("\n") && s.split("\n").some((ln, i) => i > 0 && ln.trim() !== "");
+  }
+
+  /* =========================
+    今日チップ（勝敗）
+  ========================= */
+  function summarizeToday(rows){
+    const t = todayKey();
+    const today = rows.filter(r => (r.ts||"").startsWith(t));
+    const w = today.filter(r => r.result==="WIN").length;
+    const l = today.filter(r => r.result==="LOSE").length;
+    return {w,l};
+  }
+
+  /* =========================
+    フィルタ済み配列（詳細の前へ/次へ基準）
+  ========================= */
+  let currentFiltered = [];
+  let currentDetailIndex = -1;
+
+  /* =========================
+    フィルタ（検索/勝敗/今日）
+  ========================= */
+  function getFilteredRows(rows){
+    const q = $("q").value.trim().toLowerCase();
+    const f = $("filter").value;
+    const tKey = todayKey();
+
+    let filtered = rows.slice();
+
+    if(f==="WIN") filtered = filtered.filter(r=>r.result==="WIN");
+    if(f==="LOSE") filtered = filtered.filter(r=>r.result==="LOSE");
+    if(f==="TODAY") filtered = filtered.filter(r=>(r.ts||"").startsWith(tKey));
+
+    if(state.selectedType !== "ALL"){
+      filtered = filtered.filter(r => (r.matchType || "") === state.selectedType);
+    }
+
+    if(q){
+      filtered = filtered.filter(r=>{
+        const hay = [
+          r.opponent, r.my1, r.my2, r.their1, r.their2, r.turn, r.tag,
+          r.pivot, r.next, r.ts, r.result, r.myBan, r.theirBan, r.matchType
+        ].join(" ").toLowerCase();
+        return hay.includes(q);
+      });
+    }
+
+    filtered.sort((a,b)=>b.id-a.id);
+    return filtered;
+  }
+
+  /* =========================
+    ページング
+  ========================= */
+  const TYPE_FILTER_KEY = "furuyoni_list_type_filter_v1";
+
+  const state = {
+    page: 1,
+    perPage: 30,
+    keyword: "",
+    result: "ALL",
+    selectedType: localStorage.getItem(TYPE_FILTER_KEY) || "ALL",
+  };
+
+  function clampPage(page, totalPages){
+    if(totalPages<=0) return 1;
+    return Math.min(Math.max(1,page), totalPages);
+  }
+
+  function renderPager(totalItems){
+    const totalPages = Math.max(1, Math.ceil(totalItems / PER_PAGE));
+    state.page = clampPage(state.page, totalPages);
+
+    const start = totalItems===0 ? 0 : (state.page - 1) * PER_PAGE + 1;
+    const end = Math.min(state.page * PER_PAGE, totalItems);
+
+    const prevDisabled = state.page <= 1;
+    const nextDisabled = state.page >= totalPages;
+
+    const pages = [];
+    const add = (p)=>{ if(!pages.includes(p)) pages.push(p); };
+    add(1); add(totalPages);
+    for(let p=state.page-2; p<=state.page+2; p++){
+      if(p>=1 && p<=totalPages) add(p);
+    }
+    pages.sort((a,b)=>a-b);
+
+    let pageHtml="", last=0;
+    for(const p of pages){
+      if(last && p-last>1) pageHtml += `<span class="mini">…</span>`;
+      const isCurrent = p===state.page;
+      pageHtml += `<button type="button" data-page="${p}" ${isCurrent ? "disabled":""}>${p}</button>`;
+      last=p;
+    }
+
+    $("pager").innerHTML = `
+      <button type="button" data-nav="prev" ${prevDisabled ? "disabled":""}>←</button>
+      ${pageHtml}
+      <button type="button" data-nav="next" ${nextDisabled ? "disabled":""}>→</button>
+      <span class="mini">${totalItems===0 ? "0件" : `${start}-${end} / ${totalItems}件`}</span>
+    `;
+
+    $("pager").querySelectorAll("[data-page]").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        state.page = Number(btn.getAttribute("data-page"));
+        render();
+
+        track("list_page_change", {
+          page: state.page
+        });
+      });
+    });
+    $("pager").querySelectorAll("[data-nav]").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const nav = btn.getAttribute("data-nav");
+        if(nav==="prev") state.page -= 1;
+        if(nav==="next") state.page += 1;
+        render();
+
+        track("list_page_change", {
+          page: state.page,
+          nav: nav
+        });
+      });
+    });
+  }
+
+  /* =========================
+    未保存変更（dirty）判定
+    - 編集フォームの内容をスナップショット化して比較
+    - 「前へ/次へ」「閉じる」「表示に戻る」で確認に使う
+  ========================= */
+  let lastEditSnapshot = null;
+
+  function getEditSnapshot(){
+    return {
+      result: $("editResult").value,
+      turn: $("editTurn").value,
+      my1: $("editMy1").value.trim(),
+      my2: $("editMy2").value.trim(),
+      their1: $("editTheir1").value.trim(),
+      their2: $("editTheir2").value.trim(),
+      myBan: $("editMyBan").value.trim(),
+      theirBan: $("editTheirBan").value.trim(),
+      tag: $("editTag").value.trim(),
+      pivot: $("editPivot").value.trim(),
+      next: $("editNext").value.trim(),
+      matchType: $("editMatchType").value,
+    };
+  }
+
+  function snapshotEquals(a,b){
+    return JSON.stringify(a) === JSON.stringify(b);
+  }
+
+  function isEditMode(){
+    return $("detailEdit").style.display !== "none";
+  }
+
+  function isDirty(){
+    if(!isEditMode()) return false;
+    if(!lastEditSnapshot) return false;
+    return !snapshotEquals(getEditSnapshot(), lastEditSnapshot);
+  }
+
+  function confirmDiscardIfDirty(message){
+    if(!isDirty()) return true;
+    return confirm(message || "未保存の変更があります。\n保存せずに移動しますか？");
+  }
+
+  /* =========================
+    詳細モーダル：表示/編集モード切替
+  ========================= */
+  function setEditMode(on){
+    $("detailView").style.display = on ? "none" : "block";
+    $("detailEdit").style.display = on ? "block" : "none";
+    $("detailEditBtn").textContent = on ? "表示に戻る" : "編集";
+  }
+
+  function fillEditForm(r){
+    $("editResult").value = r.result || "WIN";
+    $("editTurn").value = r.turn || "";
+    $("editMy1").value = r.my1 || "";
+    $("editMy2").value = r.my2 || "";
+    $("editTheir1").value = r.their1 || "";
+    $("editTheir2").value = r.their2 || "";
+    $("editMyBan").value = r.myBan || "";
+    $("editTheirBan").value = r.theirBan || "";
+    $("editTag").value = r.tag || "";
+    $("editPivot").value = r.pivot || "";
+    $("editNext").value = r.next || "";
+    $("editMatchType").value = r.matchType || "";
+
+    // ★この時点（読み込んだ直後）を「保存済みの基準」にする
+    lastEditSnapshot = getEditSnapshot();
+  }
+
+  function openDetailByIndex(idx){
+    if(idx < 0 || idx >= currentFiltered.length) return;
+
+    currentDetailIndex = idx;
+    const r = currentFiltered[idx];
+
+    // タグ/勝敗/日時などを上部バッジで表示
+    const badges = [];
+    badges.push(`<span class="badge">🕒 ${escapeHtml(r.ts || "")}</span>`);
+
+    const resText = r.result === "WIN" ? "勝ち" : "負け";
+    const resClass = r.result === "WIN" ? "badge winBadge" : "badge loseBadge";
+    badges.push(`<span class="${resClass}">● ${escapeHtml(resText)}</span>`);
+
+    const mt = matchTypeText(r.matchType);
+    if(mt !== "—") badges.push(`<span class="badge">📌 ${escapeHtml(mt)}</span>`);
+    if(r.turn) badges.push(`<span class="badge">${escapeHtml(r.turn)}</span>`);
+    if(r.tag)  badges.push(`<span class="badge tagBadge">#${escapeHtml(r.tag)}</span>`);
+
+    $("detailMeta").innerHTML = badges.join(" ");
+
+    // 相手は表示しない（基本情報から削除）
+    const baseLines = [];
+    baseLines.push(`使用：${pairName(r.my1,r.my2)} vs ${pairName(r.their1,r.their2)}`);
+    baseLines.push(`勝敗：${resText}`);
+    baseLines.push(`区分：${mt}`);
+    baseLines.push(`先後：${r.turn || "—"}`);
+    $("detailBase").textContent = baseLines.join("\n");
+
+    $("detailBan").textContent = `自分：${r.myBan || "—"} / 相手：${r.theirBan || "—"}`;
+    $("detailPivot").textContent = r.pivot || "—";
+    $("detailNext").textContent = r.next || "—";
+
+    // ナビ
+    $("prevBtn").disabled = (idx <= 0);
+    $("nextBtn").disabled = (idx >= currentFiltered.length - 1);
+
+    // 編集欄に反映
+    fillEditForm(r);
+
+    // 表示モードで開く
+    setEditMode(false);
+
+    $("detailModal").style.display = "flex";
+    $("detailModal").setAttribute("aria-hidden", "false");
+
+    track("log_open_detail", {
+      source: "list",
+      result: r.result,
+      match_type: r.matchType || "none"
+    });
+  }
+
+  function openDetailById(id){
+    const idx = currentFiltered.findIndex(r => r.id === id);
+    if(idx < 0) return;
+    openDetailByIndex(idx);
+  }
+
+  function closeDetail(){
+    if(!confirmDiscardIfDirty("未保存の変更があります。\n閉じてもいいですか？")) return;
+
+    $("detailModal").style.display = "none";
+    $("detailModal").setAttribute("aria-hidden", "true");
+    currentDetailIndex = -1;
+    setEditMode(false);
+  }
+
+  $("closeDetail").addEventListener("click", closeDetail);
+
+  // 前へ/次へ（未保存なら確認）
+  $("prevBtn").addEventListener("click", ()=>{
+    if(!confirmDiscardIfDirty("未保存の変更があります。\n保存せずに前の試合へ移動しますか？")) return;
+    openDetailByIndex(currentDetailIndex - 1);
+  });
+
+  $("nextBtn").addEventListener("click", ()=>{
+    if(!confirmDiscardIfDirty("未保存の変更があります。\n保存せずに次の試合へ移動しますか？")) return;
+    openDetailByIndex(currentDetailIndex + 1);
+  });
+
+  // 編集トグル（編集→表示に戻る時に未保存確認）
+  $("detailEditBtn").addEventListener("click", ()=>{
+    const isEdit = isEditMode();
+
+    if(isEdit){
+      // 編集→表示へ戻る
+      if(!confirmDiscardIfDirty("未保存の変更があります。\n表示に戻しますか？")) return;
+      setEditMode(false);
+      // 表示に戻る時は、フォームを“元の状態”に戻しておく（気持ちよく）
+      if(currentDetailIndex >= 0) fillEditForm(currentFiltered[currentDetailIndex]);
+      return;
+    }
+
+    // 表示→編集へ
+    setEditMode(true);
+    track("log_edit_start", {
+      match_type: currentFiltered[currentDetailIndex]?.matchType || "none"
+    });
+
+    // ★編集開始時点を基準にする（ここからの変更を検知したい）
+    lastEditSnapshot = getEditSnapshot();
+  });
+
+  // 編集キャンセル（未保存なら確認→OKなら元に戻す）
+  $("editCancelBtn").addEventListener("click", ()=>{
+    if(!confirmDiscardIfDirty("未保存の変更があります。\nキャンセルして破棄しますか？")) return;
+    if(currentDetailIndex < 0) return;
+    fillEditForm(currentFiltered[currentDetailIndex]);
+    setEditMode(false);
+  });
+
+  // 編集保存
+  $("editSaveBtn").addEventListener("click", ()=>{
+    if(currentDetailIndex < 0) return;
+
+    const original = currentFiltered[currentDetailIndex];
+    const id = original.id;
+
+    const updated = {
+      ...original,
+      result: $("editResult").value,
+      turn: $("editTurn").value,
+      my1: $("editMy1").value.trim(),
+      my2: $("editMy2").value.trim(),
+      their1: $("editTheir1").value.trim(),
+      their2: $("editTheir2").value.trim(),
+      myBan: $("editMyBan").value.trim(),
+      theirBan: $("editTheirBan").value.trim(),
+      tag: $("editTag").value.trim(),
+      pivot: $("editPivot").value.trim(),
+      next: $("editNext").value.trim(),
+      matchType: $("editMatchType").value,
+    };
+
+  /* =========================
+    辞書ID更新
+  ========================= */
+    // 辞書に統一登録（同じ文字列なら同じID）
+    const my1Item = upsertDict(updated.my1);
+    const my2Item = upsertDict(updated.my2);
+    const their1Item = upsertDict(updated.their1);
+    const their2Item = upsertDict(updated.their2);
+    const myBanItem = upsertDict(updated.myBan);
+    const theirBanItem = upsertDict(updated.theirBan);
+
+    // IDも更新して保存（表示は文字列のまま）
+    updated.my1Id = my1Item?.id ?? null;
+    updated.my2Id = my2Item?.id ?? null;
+    updated.their1Id = their1Item?.id ?? null;
+    updated.their2Id = their2Item?.id ?? null;
+    updated.myBanId = myBanItem?.id ?? null;
+    updated.theirBanId = theirBanItem?.id ?? null;
+
+    // datalist更新
+    renderWordDatalist();
+
+    // 最低限の必須
+    if(!updated.my1 || !updated.my2 || !updated.their1 || !updated.their2){
+      alert("必須：自分メガミ2 / 相手メガミ2 を埋めてね");
+      return;
+    }
+
+    // 全体データを更新
+    const rows = loadRows();
+    const idxAll = rows.findIndex(r => r.id === id);
+    if(idxAll < 0){
+      alert("保存対象が見つかりませんでした（一覧を更新して再度試してね）");
+      return;
+    }
+    rows[idxAll] = updated;
+    saveRows(rows);
+
+    track("log_edit_save", {
+      result: updated.result,
+      match_type: updated.matchType || "none"
+    });
+
+    // 保存後は「汚れていない状態」にする
+    lastEditSnapshot = getEditSnapshot();
+
+    // 画面更新（filtered再構築→同じIDを開き直す）
+    render();
+
+    // 新しいfilteredの中で同じIDを探して開き直す
+    const newIdx = currentFiltered.findIndex(r => r.id === id);
+    if(newIdx >= 0) openDetailByIndex(newIdx);
+    else closeDetail(); // フィルタ条件で消えた場合
+  });
+
+  // 1件削除（共通）
+  function deleteOneById(id){
+    const rows = loadRows();
+    const idx = rows.findIndex(r => r.id === id);
+    if(idx < 0) return false;
+    rows.splice(idx, 1);
+    saveRows(rows);
+    return true;
+  }
+
+  // 詳細：削除
+  $("detailDeleteBtn").addEventListener("click", ()=>{
+    if(currentDetailIndex < 0) return;
+    const r = currentFiltered[currentDetailIndex];
+
+    const ok = confirm(
+      `この1件を削除します。\n` +
+      `取り消せません。\n\n` +
+      `【${r.ts}】${pairName(r.my1,r.my2)} vs ${pairName(r.their1,r.their2)}\n` +
+      `本当に削除しますか？`
+    );
+    if(!ok) return;
+
+    deleteOneById(r.id);
+
+    track("log_delete", {
+      source: "detail",
+      result: r.result,
+      match_type: r.matchType || "none"
+    });
+
+    closeDetail();
+    render();
+  });
+
+  /* =========================
+    一覧描画（クリック＝詳細、ボタン＝編集/削除）
+  ========================= */
+  function renderList(rows){
+    const filtered = getFilteredRows(rows);
+    currentFiltered = filtered;
+
+    const total = filtered.length;
+    renderPager(total);
+
+    if(total===0){
+      $("listArea").innerHTML = `<div class="empty">該当なし</div>`;
+      return;
+    }
+
+    const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
+    state.page = clampPage(state.page, totalPages);
+
+    const startIdx = (state.page - 1) * PER_PAGE;
+    const pageRows = filtered.slice(startIdx, startIdx + PER_PAGE);
+
+    let html = `<table><tbody>`;
+    for(const r of pageRows){
+      const res = r.result==="WIN" ? "勝ち" : "負け";
+      const mark = r.result==="WIN" ? "◎" : "×";
+      const myTeam = pairName(r.my1,r.my2);
+      const theirTeam = pairName(r.their1,r.their2);
+      const mt = matchTypeText(r.matchType);
+
+      const pivot1 = firstLine(r.pivot);
+      const ellipsis = hasMoreLines(r.pivot) ? " …" : "";
+
+      html += `
+        <tr>
+          <td style="width:92px">
+            <span class="mini">${escapeHtml((r.ts||"").slice(11))}</span><br>
+            <b>${mark} ${res}</b>
+          </td>
+          <td>
+            <span class="linklike" data-open="${r.id}">${escapeHtml(myTeam)} vs ${escapeHtml(theirTeam)}</span>
+            <span class="mini">　[${escapeHtml(mt)}]</span>
+            ${r.tag ? `<span class="mini">　#${escapeHtml(r.tag)}</span>` : ""}
+            <div class="mini">BAN：自分 ${escapeHtml(r.myBan||"—")} / 相手 ${escapeHtml(r.theirBan||"—")}</div>
+            <div class="mini">反省：${escapeHtml(pivot1)}${ellipsis}</div>
+          </td>
+          <td style="width:150px">
+            <div class="actions">
+              <button class="ghost miniBtn" type="button" data-edit="${r.id}">編集</button>
+              <button class="dangerBtn miniBtn" type="button" data-del="${r.id}">削除</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }
+    html += `</tbody></table>`;
+    $("listArea").innerHTML = html;
+
+    // 詳細を開く
+    document.querySelectorAll("[data-open]").forEach(el=>{
+      el.addEventListener("click", ()=>{
+        const id = Number(el.getAttribute("data-open"));
+        openDetailById(id);
+      });
+    });
+
+    // 一覧：編集（編集モードで開く）※編集開始時をスナップショット基準に
+    document.querySelectorAll("[data-edit]").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const id = Number(btn.getAttribute("data-edit"));
+        openDetailById(id);
+        setTimeout(()=>{
+          setEditMode(true);
+          lastEditSnapshot = getEditSnapshot(); // ★編集開始を基準にする
+        }, 0);
+      });
+    });
+
+    // 一覧：削除
+    document.querySelectorAll("[data-del]").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const id = Number(btn.getAttribute("data-del"));
+        const r = currentFiltered.find(x=>x.id===id);
+        if(!r) return;
+
+        const ok = confirm(
+          `この1件を削除します。\n取り消せません。\n\n` +
+          `【${r.ts}】${pairName(r.my1,r.my2)} vs ${pairName(r.their1,r.their2)}\n` +
+          `本当に削除しますか？`
+        );
+        if(!ok) return;
+
+        deleteOneById(id);
+
+        track("log_delete", {
+          source: "list",
+          match_type: r.matchType || "none"
+        });
+
+        render();
+      });
+    });
+  }
+
+  function render(){
+    renderWordDatalist();
+    const rows = loadRows();
+    $("countChip").textContent = `${rows.length}件`;
+    const t = summarizeToday(rows);
+    $("todayChip").textContent = `今日：${t.w}勝${t.l}敗`;
+    renderList(rows);
+  }
+
+  /* =========================
+    イベント
+  ========================= */
+  let qTimer = null;
+
+  $("q").addEventListener("input", ()=>{
+    state.page = 1;
+    render();
+
+    clearTimeout(qTimer);
+    qTimer = setTimeout(()=>{
+      track("list_search", {
+        has_query: !!$("q").value.trim(),
+        result_filter: $("filter").value,
+        type_filter: $("typeFilter").value
+      });
+    }, 500);
+  });
+
+  $("filter").addEventListener("change", ()=>{
+    state.page = 1;
+    render();
+
+    track("list_filter_change", {
+      result_filter: $("filter").value,
+      type_filter: $("typeFilter").value
+    });
+  });
+
+  $("typeFilter").addEventListener("change", ()=>{
+    state.selectedType = $("typeFilter").value;
+    localStorage.setItem(TYPE_FILTER_KEY, state.selectedType);
+    state.page = 1;
+    render();
+
+    track("list_filter_change", {
+      result_filter: $("filter").value,
+      type_filter: state.selectedType
+    });
+  });
+
+  $("typeFilter").value = state.selectedType;
+
+  // 初期化
+  render();
+})();
+</script>
+</body>
+</html>
