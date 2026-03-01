@@ -1536,7 +1536,7 @@
       html += `
         <tr>
           <td style="width:92px">
-            <span class="mini">${escapeHtml((r.ts||"").slice(11))}</span><br>
+            <span class="mini">${escapeHtml((r.ts||"").slice(0,10))}</span><br>
             <b>${mark} ${res}</b>
           </td>
           <td>
