@@ -1333,14 +1333,25 @@
     const y = String(ts||"").slice(0,4);
     return /^\d{4}$/.test(y) ? y : null;
   }
+  function compareRowsNewest(a,b){
+    const tsA = String(a?.ts || "");
+    const tsB = String(b?.ts || "");
+    if(tsA !== tsB) return tsB.localeCompare(tsA);
+    return Number(b?.id || 0) - Number(a?.id || 0);
+  }
 
   // =========================================================
   // 5) データ読み書き（試合ログ）
   // =========================================================
   function loadRows(){
-    try{ return JSON.parse(localStorage.getItem(DATA_KEY) || "[]"); }
-    catch{ return []; }
+    try{
+      return JSON.parse(localStorage.getItem(DATA_KEY) || "[]");
+    }catch(e){
+      alert("保存データの読み込みに失敗しました。データを保護するため、保存処理を中止しました。");
+      return null;
+    }
   }
+
   function saveRows(rows){
     localStorage.setItem(DATA_KEY, JSON.stringify(rows));
   }
@@ -1523,7 +1534,13 @@
       return;
     }
 
-    const sorted = rows.slice().sort((a,b)=>b.id-a.id).slice(0,6);
+    const sorted = rows.slice().sort((a,b)=>{
+      const ta = String(a.ts || "");
+      const tb = String(b.ts || "");
+      const t = tb.localeCompare(ta, "ja");
+      if(t !== 0) return t;
+      return Number(b.id || 0) - Number(a.id || 0);
+    }).slice(0,6);
 
     let html = `<table><tbody>`;
     for(const r of sorted){
@@ -1669,6 +1686,8 @@
     }
 
     const rows = loadRows();
+    if(!Array.isArray(rows)) return;
+
     rows.push(entry);
     saveRows(rows);
 

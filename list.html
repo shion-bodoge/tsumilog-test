@@ -1153,9 +1153,14 @@
     データ（localStorage）
   ========================= */
   function loadRows(){
-    try{ return JSON.parse(localStorage.getItem(DATA_KEY) || "[]"); }
-    catch{ return []; }
+    try{
+      return JSON.parse(localStorage.getItem(DATA_KEY) || "[]");
+    }catch(e){
+      alert("保存データの読み込みに失敗しました。データ保護のため処理を中止しました。");
+      return null;
+    }
   }
+
   function saveRows(rows){
     localStorage.setItem(DATA_KEY, JSON.stringify(rows));
   }
@@ -1168,6 +1173,13 @@
     const d = new Date();
     return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
   }
+  function compareRowsNewest(a,b){
+    const ta = String(a.ts || "");
+    const tb = String(b.ts || "");
+    const t = tb.localeCompare(ta, "ja");
+    if(t !== 0) return t;
+    return Number(b.id || 0) - Number(a.id || 0);
+  });
 
   /* =========================
     表示ユーティリティ
@@ -1250,7 +1262,7 @@
       });
     }
 
-    filtered.sort((a,b)=>b.id-a.id);
+    filtered.sort(compareRowsNewest);
     return filtered;
   }
 
@@ -1731,6 +1743,8 @@
   function render(){
     renderWordDatalist();
     const rows = loadRows();
+    if(!Array.isArray(rows)) return;
+
     $("countChip").textContent = `${rows.length}件`;
     const t = summarizeToday(rows);
     $("todayChip").textContent = `今日：${t.w}勝${t.l}敗`;
