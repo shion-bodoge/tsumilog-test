@@ -271,6 +271,73 @@
   .versionBadge:hover{
     opacity: 1;
   }
+
+  .resultWin{
+    color: var(--ok);
+    font-weight: 900;
+  }
+  .resultLose{
+    color: var(--danger);
+    font-weight: 900;
+  }
+
+/* =========================
+   辞書モーダル用CSS
+========================= */
+  .dictList{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+
+  .dictItem{
+    display:flex;
+    gap:8px;
+    align-items:center;
+    padding:10px;
+    border:1px solid rgba(0,0,0,.08);
+    border-radius:14px;
+    background:#fff;
+  }
+
+  .dictItem.dragging{
+    opacity:.55;
+  }
+
+  .dictHandle{
+    cursor:grab;
+    user-select:none;
+    font-size:18px;
+    line-height:1;
+    padding:4px 6px;
+    color:var(--muted);
+  }
+
+  .dictLabel{
+    flex:1;
+    word-break:break-word;
+  }
+
+  .dictBtns{
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+  }
+
+  @media (max-width: 640px){
+    .dictItem{
+      align-items:flex-start;
+      flex-wrap:wrap;
+    }
+    .dictLabel{
+      width:100%;
+    }
+  }
+
+  .dictItem.dragging-over{
+    outline:2px dashed rgba(255,122,47,.45);
+  }
+
 </style>
 </head>
 
@@ -281,6 +348,7 @@
     <a class="chip" href="index.html" style="text-decoration:none;color:inherit;">← 入力へ</a>
     <button class="chip chipBtn" id="openHelp" type="button">❓ ヘルプ</button>
     <button class="chip chipBtn" id="openData" type="button">📦 エクスポート/インポート</button>
+    <button class="chip chipBtn" id="openDict" type="button">📚 辞書編集</button>
     <div class="chip" title="サーバー送信はありません。ブラウザ内に保存されます。">🔒 ローカル保存</div>
     <div class="chip" id="countChip">0件</div>
   </div>
@@ -501,6 +569,28 @@
       <div class="mini" style="margin-top:8px;">
         ※重複候補は保留されます。「既存を残す / インポートを採用 / 両方残す」を選んでから確定します。
       </div>
+    </div>
+  </div>
+</div>
+
+<div id="dictModal" class="modal" aria-hidden="true">
+  <div class="card inner">
+    <div class="modalTop">
+      <h3 class="modalTitle">📚 ユーザ辞書の編集</h3>
+      <button class="ghost" type="button" id="closeDict">閉じる</button>
+    </div>
+
+    <div class="helpBox">
+      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
+        <input id="dictNewText" placeholder="辞書に追加する名前" style="flex:1; min-width:220px;">
+        <button class="primary" type="button" id="dictAddBtn">追加</button>
+      </div>
+
+      <div class="mini" style="margin-bottom:10px;">
+        並び替えは ↑↓ ボタンでも、ドラッグでもできます。
+      </div>
+
+      <div id="dictList"></div>
     </div>
   </div>
 </div>
@@ -1054,26 +1144,49 @@
   // =========================================================
   const DICT_KEY = "tsumilog_user_dict_v1";
 
+  function normText(s){
+    return String(s || "").trim().replace(/\s+/g, " ").normalize("NFKC");
+  }
+
   function loadDict(){
     try{
       const arr = JSON.parse(localStorage.getItem(DICT_KEY) || "[]");
-      return Array.isArray(arr) ? arr : [];
+      if(!Array.isArray(arr)) return [];
+
+      return arr
+        .map((x, i) => ({
+          id: Number(x.id) || (i + 1),
+          key: normText(x.key || x.label || ""),
+          label: String(x.label || "").trim(),
+          order: Number.isFinite(Number(x.order)) ? Number(x.order) : i
+        }))
+        .filter(x => x.label && x.key)
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     }catch{
       return [];
     }
   }
+
   function saveDict(list){
-    localStorage.setItem(DICT_KEY, JSON.stringify(list));
+    const normalized = list
+      .map((x, i) => ({
+        id: Number(x.id) || (i + 1),
+        key: normText(x.label || x.key || ""),
+        label: String(x.label || "").trim(),
+        order: i
+      }))
+      .filter(x => x.label && x.key);
+
+    localStorage.setItem(DICT_KEY, JSON.stringify(normalized));
   }
-  function normText(s){
-    return String(s||"").trim().replace(/\s+/g," ").normalize("NFKC");
-  }
+
   function nextDictId(dict){
-    const max = dict.reduce((m,x)=>Math.max(m, Number(x.id)||0), 0);
+    const max = dict.reduce((m, x) => Math.max(m, Number(x.id) || 0), 0);
     return max + 1;
   }
+
   function upsertDict(text){
-    const label = String(text||"").trim();
+    const label = String(text || "").trim();
     const key = normText(label);
     if(!key) return null;
 
@@ -1081,24 +1194,222 @@
     const hit = dict.find(x => x.key === key);
     if(hit) return hit;
 
-    const item = { id: nextDictId(dict), key, label };
+    const item = {
+      id: nextDictId(dict),
+      key,
+      label,
+      order: dict.length
+    };
+
     dict.push(item);
     saveDict(dict);
     return item;
   }
+
   function renderWordDatalist(){
     const dl = document.getElementById("wordList");
     if(!dl) return;
 
     const dict = loadDict();
     dl.innerHTML = dict
-      .slice()
-      .sort((a,b)=>String(a.label).localeCompare(String(b.label),"ja"))
       .map(x => `<option value="${escapeHtml(x.label)}"></option>`)
       .join("");
   }
 
-  /* =========================
+  // =========================================================
+  // ユーザー辞書編集
+  // =========================================================
+  function openDict(){
+    $("dictModal").style.display = "flex";
+    $("dictModal").setAttribute("aria-hidden","false");
+    renderDictEditor();
+  }
+  function closeDict(){
+    $("dictModal").style.display = "none";
+    $("dictModal").setAttribute("aria-hidden","true");
+  }
+
+  $("openDict").addEventListener("click", openDict);
+  $("closeDict").addEventListener("click", closeDict);
+
+  function moveDictItem(fromIndex, toIndex){
+    const dict = loadDict().slice().sort((a,b)=>(a.order ?? 0) - (b.order ?? 0));
+    if(
+      fromIndex < 0 || fromIndex >= dict.length ||
+      toIndex < 0 || toIndex >= dict.length ||
+      fromIndex === toIndex
+    ) return;
+
+    const [item] = dict.splice(fromIndex, 1);
+    dict.splice(toIndex, 0, item);
+    saveDict(dict);
+    renderWordDatalist();
+    renderDictEditor();
+  }
+
+  function deleteDictItem(id){
+    const dict = loadDict().filter(x => x.id !== id);
+    saveDict(dict);
+    renderWordDatalist();
+    renderDictEditor();
+  }
+
+  function addDictItem(){
+    const input = $("dictNewText");
+    const text = (input.value || "").trim();
+    if(!text){
+      alert("追加する文字を入力してください。");
+      return;
+    }
+    const item = upsertDict(text);
+    if(!item){
+      alert("追加できませんでした。");
+      return;
+    }
+    input.value = "";
+    renderWordDatalist();
+    renderDictEditor();
+  }
+
+  $("dictAddBtn").addEventListener("click", addDictItem);
+  $("dictNewText").addEventListener("keydown", (e)=>{
+    if(e.key === "Enter"){
+      e.preventDefault();
+      addDictItem();
+    }
+  });
+
+  function renderDictEditor(){
+    const area = $("dictList");
+    const dict = loadDict().slice().sort((a,b)=>(a.order ?? 0) - (b.order ?? 0));
+
+    if(dict.length === 0){
+      area.innerHTML = `<div class="mini">まだ辞書はありません。</div>`;
+      return;
+    }
+
+    area.innerHTML = `
+      <div class="dictList">
+        ${dict.map((x, i)=>`
+          <div class="dictItem" data-dict-index="${i}" data-dict-id="${x.id}" draggable="true">
+            <div class="dictHandle" title="ドラッグして移動">☰</div>
+            <div class="dictLabel">${escapeHtml(x.label)}</div>
+            <div class="dictBtns">
+              <button class="ghost miniBtn" type="button" data-up="${i}" ${i===0 ? "disabled" : ""}>↑</button>
+              <button class="ghost miniBtn" type="button" data-down="${i}" ${i===dict.length-1 ? "disabled" : ""}>↓</button>
+              <button class="dangerBtn miniBtn" type="button" data-dict-del="${x.id}">削除</button>
+            </div>
+          </div>
+        `).join("")}
+      </div>
+    `;
+
+    area.querySelectorAll("[data-up]").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const i = Number(btn.getAttribute("data-up"));
+        moveDictItem(i, i - 1);
+      });
+    });
+
+    area.querySelectorAll("[data-down]").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const i = Number(btn.getAttribute("data-down"));
+        moveDictItem(i, i + 1);
+      });
+    });
+
+    area.querySelectorAll("[data-dict-del]").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const id = Number(btn.getAttribute("data-dict-del"));
+        const ok = confirm("この辞書項目を削除しますか？");
+        if(!ok) return;
+        deleteDictItem(id);
+      });
+    });
+
+    bindDictDragAndDrop();
+    bindDictTouchDrag();
+  } 
+
+  // PC用
+  function bindDictDragAndDrop(){
+    const items = Array.from(document.querySelectorAll(".dictItem"));
+    let dragFrom = -1;
+
+    items.forEach(item=>{
+      item.addEventListener("dragstart", ()=>{
+        dragFrom = Number(item.getAttribute("data-dict-index"));
+        item.classList.add("dragging");
+      });
+
+      item.addEventListener("dragend", ()=>{
+        item.classList.remove("dragging");
+        dragFrom = -1;
+      });
+
+      item.addEventListener("dragover", (e)=>{
+        e.preventDefault();
+      });
+
+      item.addEventListener("drop", (e)=>{
+        e.preventDefault();
+        const dropTo = Number(item.getAttribute("data-dict-index"));
+        if(dragFrom < 0 || dropTo < 0) return;
+        moveDictItem(dragFrom, dropTo);
+      });
+    });
+  }
+
+  // スマホ用
+  function bindDictTouchDrag(){
+    const items = Array.from(document.querySelectorAll(".dictItem"));
+    let startIndex = -1;
+    let activeEl = null;
+
+    items.forEach(item=>{
+      item.addEventListener("touchstart", ()=>{
+        startIndex = Number(item.getAttribute("data-dict-index"));
+        activeEl = item;
+        item.classList.add("dragging");
+      }, { passive:true });
+
+      item.addEventListener("touchmove", (e)=>{
+        const touch = e.touches[0];
+        if(!touch) return;
+
+        const elem = document.elementFromPoint(touch.clientX, touch.clientY);
+        const target = elem?.closest?.(".dictItem");
+        if(!target || !activeEl) return;
+
+        items.forEach(x=>x.classList.remove("dragging-over"));
+        target.classList.add("dragging-over");
+      }, { passive:true });
+
+      item.addEventListener("touchend", (e)=>{
+        if(startIndex < 0 || !activeEl) return;
+
+        const touch = e.changedTouches[0];
+        const elem = document.elementFromPoint(touch.clientX, touch.clientY);
+        const target = elem?.closest?.(".dictItem");
+        const endIndex = target ? Number(target.getAttribute("data-dict-index")) : -1;
+
+        items.forEach(x=>{
+          x.classList.remove("dragging");
+          x.classList.remove("dragging-over");
+        });
+
+        if(endIndex >= 0 && endIndex !== startIndex){
+          moveDictItem(startIndex, endIndex);
+        }
+
+        startIndex = -1;
+        activeEl = null;
+      }, { passive:true });
+    });
+  }
+
+
+ /* =========================
     テーマ反映（CSS変数を書き換える）
   ========================= */
   const DEFAULT_THEME = {
@@ -1673,7 +1984,7 @@
         <tr>
           <td style="width:92px">
             <span class="mini">${escapeHtml((r.ts||"").slice(0,10))}</span><br>
-            <b>${mark} ${res}</b>
+            <b class="${r.result==="WIN" ? "resultWin" : "resultLose"}">${mark} ${res}</b>
           </td>
           <td>
             <span class="linklike" data-open="${r.id}">${escapeHtml(myTeam)} vs ${escapeHtml(theirTeam)}</span>
