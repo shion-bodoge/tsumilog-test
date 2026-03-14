@@ -1083,11 +1083,19 @@
     const box = $(boxId);
     if(!input || !box) return;
 
-    // スマホ・タブレットだけ自作サジェストを使う
     const useCustomSuggest = window.matchMedia("(hover: none), (pointer: coarse), (max-width: 820px)").matches;
 
-    // PCではネイティブの datalist を使う
-    if(!useCustomSuggest){
+    // スマホではネイティブ datalist を無効化して二重表示を防ぐ
+    if(useCustomSuggest){
+      if(input.hasAttribute("list")){
+        input.dataset.originalList = input.getAttribute("list") || "";
+        input.removeAttribute("list");
+      }
+    }else{
+      // PCでは元に戻す
+      if(!input.hasAttribute("list") && input.dataset.originalList){
+        input.setAttribute("list", input.dataset.originalList);
+      }
       box.style.display = "none";
       box.innerHTML = "";
       return;
