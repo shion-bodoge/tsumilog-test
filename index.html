@@ -131,6 +131,7 @@
     background:#fff;
     color:var(--text);
     outline:none;
+    font-size:16px;
   }
   textarea{
     min-height:140px;
@@ -390,6 +391,41 @@
     color: var(--danger);
     font-weight: 900;
   }
+
+  .suggestWrap{
+    position:relative;
+  }
+
+  .suggestBox{
+    display:none;
+    position:absolute;
+    left:0;
+    right:0;
+    top:calc(100% + 6px);
+    z-index:50;
+    background:#fff;
+    border:1px solid rgba(0,0,0,.12);
+    border-radius:12px;
+    box-shadow:0 10px 24px rgba(0,0,0,.08);
+    max-height:220px;
+    overflow:auto;
+  }
+
+  .suggestItem{
+    padding:10px 12px;
+    font-size:16px;
+    cursor:pointer;
+    border-bottom:1px solid rgba(0,0,0,.06);
+  }
+
+  .suggestItem:last-child{
+    border-bottom:0;
+  }
+
+  .suggestItem:active,
+  .suggestItem:hover{
+    background:rgba(255,122,47,.08);
+  }
 </style>
 </head>
 
@@ -438,25 +474,49 @@
 
         <div class="row">
           <label>自分メガミ（使用）</label>
-          <input id="my1" list="wordList" placeholder="例：ユリナ" required />
-          <input id="my2" list="wordList" placeholder="例：サイネ" required />
-        </div>
+
+          <div class="suggestWrap">
+            <input id="my1" list="wordList" placeholder="例：ユリナ" required />
+            <div class="suggestBox" id="my1Suggest"></div>
+          </div>
+
+          <div class="suggestWrap">
+            <input id="my2" list="wordList" placeholder="例：サイネ" required />
+            <div class="suggestBox" id="my2Suggest"></div>
+         </div>
+       </div>
 
         <div class="row">
           <label>相手メガミ（使用）</label>
-          <input id="their1" list="wordList" placeholder="例：ヒミカ" required />
-          <input id="their2" list="wordList" placeholder="例：トコヨ" required />
-        </div>
+
+          <div class="suggestWrap">
+            <input id="their1" list="wordList" placeholder="例：ヒミカ" required />
+            <div class="suggestBox" id="their1Suggest"></div>
+          </div>
+
+          <div class="suggestWrap">
+            <input id="their2" list="wordList" placeholder="例：トコヨ" required />
+            <div class="suggestBox" id="their2Suggest"></div>
+         </div>
+       </div>
 
         <div class="row">
           <label>BANされたメガミ</label>
-          <input id="myBan" list="wordList" placeholder="例：オボロ" />
-        </div>
+
+          <div class="suggestWrap">
+            <input id="myBan" list="wordList" placeholder="例：オボロ" required />
+            <div class="suggestBox" id="myBanSuggest"></div>
+          </div>
+       </div>
 
         <div class="row">
           <label>BANしたメガミ</label>
-          <input id="theirBan" list="wordList" placeholder="例：ユキヒ" />
-        </div>
+
+          <div class="suggestWrap">
+            <input id="theirBan" list="wordList" placeholder="例：ユキヒ" required />
+            <div class="suggestBox" id="theirBanSuggest"></div>
+          </div>
+       </div>
 
         <div class="row">
           <label>先後（任意）</label>
@@ -1012,6 +1072,67 @@
     dl.innerHTML = dict
       .map(x => `<option value="${escapeHtml(x.label)}"></option>`)
       .join("");
+  }
+
+  function getDictLabels(){
+    return loadDict().map(x => x.label);
+  }
+
+  function bindSuggest(inputId, boxId){
+    const input = $(inputId);
+    const box = $(boxId);
+    if(!input || !box) return;
+
+    // スマホ・タブレットだけ自作サジェストを使う
+    const useCustomSuggest = window.matchMedia("(hover: none), (pointer: coarse), (max-width: 820px)").matches;
+
+    // PCではネイティブの datalist を使う
+    if(!useCustomSuggest){
+      box.style.display = "none";
+      box.innerHTML = "";
+      return;
+    }
+
+    function closeBox(){
+      box.style.display = "none";
+      box.innerHTML = "";
+    }
+
+    function openBox(){
+      const q = input.value.trim();
+      const labels = getDictLabels().filter(label => {
+        if(!q) return true;
+        return label.includes(q);
+      });
+
+      if(labels.length === 0){
+        closeBox();
+        return;
+      }
+
+      box.innerHTML = labels.map(label => `
+        <div class="suggestItem" data-value="${escapeHtml(label)}">${escapeHtml(label)}</div>
+      `).join("");
+
+      box.style.display = "block";
+
+      box.querySelectorAll(".suggestItem").forEach(item => {
+        item.addEventListener("click", () => {
+          input.value = item.getAttribute("data-value") || "";
+          closeBox();
+          input.focus();
+        });
+      });
+    }
+
+    input.addEventListener("focus", openBox);
+    input.addEventListener("input", openBox);
+    input.addEventListener("click", openBox);
+
+    document.addEventListener("click", (e) => {
+      if(e.target === input || box.contains(e.target)) return;
+      closeBox();
+    });
   }
 
   // =========================================================
@@ -1794,6 +1915,13 @@
   });
 
   // 初期化
+  bindSuggest("my1", "my1Suggest");
+  bindSuggest("my2", "my2Suggest");
+  bindSuggest("their1", "their1Suggest");
+  bindSuggest("their2", "their2Suggest");
+  bindSuggest("myBan", "myBanSuggest");
+  bindSuggest("theirBan", "theirBanSuggest");
+
   refresh();
   setInterval(()=>{ $("nowChip").textContent = nowStr(); }, 10*1000);
 })();
