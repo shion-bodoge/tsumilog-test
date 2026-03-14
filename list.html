@@ -92,8 +92,12 @@
     margin:10px 14px 10px;
   }
   input, select, textarea{
-    padding:10px;border-radius:12px;border:1px solid rgba(0,0,0,.12);background:#fff;
+    padding:10px;
+    border-radius:12px;
+    border:1px solid rgba(0,0,0,.12);
+    background:#fff;
     font:inherit;
+    font-size:16px;
   }
   textarea{resize:vertical;min-height:120px;line-height:1.6}
   .tools input{min-width:260px;max-width:420px;flex:1}
@@ -338,6 +342,40 @@
     outline:2px dashed rgba(255,122,47,.45);
   }
 
+  .suggestWrap{
+    position:relative;
+  }
+
+  .suggestBox{
+    display:none;
+    position:absolute;
+    left:0;
+    right:0;
+    top:calc(100% + 6px);
+    z-index:50;
+    background:#fff;
+    border:1px solid rgba(0,0,0,.12);
+    border-radius:12px;
+    box-shadow:0 10px 24px rgba(0,0,0,.08);
+    max-height:220px;
+    overflow:auto;
+  }
+
+  .suggestItem{
+    padding:10px 12px;
+    font-size:16px;
+    cursor:pointer;
+    border-bottom:1px solid rgba(0,0,0,.06);
+  }
+
+  .suggestItem:last-child{
+    border-bottom:0;
+  }
+
+  .suggestItem:active,
+  .suggestItem:hover{
+    background:rgba(255,122,47,.08);
+  }
 </style>
 </head>
 
@@ -482,26 +520,50 @@
           <div class="twoCol">
             <div class="row">
               <div class="cap">自分メガミ</div>
-              <input id="editMy1" list="wordList" placeholder="例：ユリナ">
-              <input id="editMy2" list="wordList" placeholder="例：サイネ">
+
+              <div class="suggestWrap">
+                <input id="editMy1" list="wordList" placeholder="例：ユリナ">
+                <div class="suggestBox" id="editMy1Suggest"></div>
+              </div>
+
+              <div class="suggestWrap">
+                <input id="editMy2" list="wordList" placeholder="例：サイネ">
+                <div class="suggestBox" id="editMy2Suggest"></div>
+              </div>
             </div>
 
             <div class="row">
               <div class="cap">相手メガミ</div>
-              <input id="editTheir1" list="wordList" placeholder="例：ヒミカ">
-              <input id="editTheir2" list="wordList" placeholder="例：トコヨ">
+
+              <div class="suggestWrap">
+                <input id="editTheir1" list="wordList" placeholder="例：ヒミカ">
+                <div class="suggestBox" id="editTheir1Suggest"></div>
+              </div>
+
+              <div class="suggestWrap">
+                <input id="editTheir2" list="wordList" placeholder="例：トコヨ">
+                <div class="suggestBox" id="editTheir2Suggest"></div>
+              </div>
             </div>
           </div>
 
           <div class="twoCol">
             <div class="row">
               <div class="cap">BANされたメガミ</div>
-              <input id="editMyBan" list="wordList" placeholder="例：オボロ">
+
+              <div class="suggestWrap">
+                <input id="editMyBan" list="wordList" placeholder="例：オボロ">
+                <div class="suggestBox" id="editMyBanSuggest"></div>
+              </div>
             </div>
 
             <div class="row">
               <div class="cap">BANしたメガミ</div>
-              <input id="editTheirBan" list="wordList" placeholder="例：ホノカ">
+
+              <div class="suggestWrap">
+                <input id="editTheirBan" list="wordList" placeholder="例：ホノカ">
+                <div class="suggestBox" id="editTheirBanSuggest"></div>
+              </div>
             </div>
           </div>
 
@@ -1214,6 +1276,75 @@
     dl.innerHTML = dict
       .map(x => `<option value="${escapeHtml(x.label)}"></option>`)
       .join("");
+  }
+
+  function getDictLabels(){
+    return loadDict().map(x => x.label);
+  }
+
+  function bindSuggest(inputId, boxId){
+    const input = $(inputId);
+    const box = $(boxId);
+    if(!input || !box) return;
+
+    const useCustomSuggest = window.matchMedia("(hover: none), (pointer: coarse), (max-width: 820px)").matches;
+
+    // スマホではネイティブ datalist を無効化
+    if(useCustomSuggest){
+      if(input.hasAttribute("list")){
+        input.dataset.originalList = input.getAttribute("list") || "";
+        input.removeAttribute("list");
+      }
+    }else{
+      // PCでは datalist をそのまま使う
+      if(!input.hasAttribute("list") && input.dataset.originalList){
+        input.setAttribute("list", input.dataset.originalList);
+      }
+      box.style.display = "none";
+      box.innerHTML = "";
+      return;
+    }
+
+    function closeBox(){
+      box.style.display = "none";
+      box.innerHTML = "";
+    }
+
+    function openBox(){
+      const q = input.value.trim();
+      const labels = getDictLabels().filter(label => {
+        if(!q) return true;
+        return label.includes(q);
+      });
+
+      if(labels.length === 0){
+        closeBox();
+        return;
+      }
+
+      box.innerHTML = labels.map(label => `
+        <div class="suggestItem" data-value="${escapeHtml(label)}">${escapeHtml(label)}</div>
+      `).join("");
+
+      box.style.display = "block";
+
+      box.querySelectorAll(".suggestItem").forEach(item => {
+        item.addEventListener("click", () => {
+          input.value = item.getAttribute("data-value") || "";
+          closeBox();
+          input.focus();
+        });
+      });
+    }
+
+    input.addEventListener("focus", openBox);
+    input.addEventListener("input", openBox);
+    input.addEventListener("click", openBox);
+
+    document.addEventListener("click", (e) => {
+      if(e.target === input || box.contains(e.target)) return;
+      closeBox();
+    });
   }
 
   // =========================================================
@@ -2107,6 +2238,13 @@
 
     const vb = $("versionBadge");
     if(vb) vb.textContent = `v${APP_VERSION}`;
+
+  bindSuggest("editMy1", "editMy1Suggest");
+  bindSuggest("editMy2", "editMy2Suggest");
+  bindSuggest("editTheir1", "editTheir1Suggest");
+  bindSuggest("editTheir2", "editTheir2Suggest");
+  bindSuggest("editMyBan", "editMyBanSuggest");
+  bindSuggest("editTheirBan", "editTheirBanSuggest");
 
   // 初期化
   render();
