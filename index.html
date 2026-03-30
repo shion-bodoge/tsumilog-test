@@ -175,7 +175,7 @@
   .box{background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:14px;padding:10px}
   .cap{font-size:12px;color:var(--muted);margin-bottom:6px}
   .body{font-size:14px;font-weight:900}
-  .mini{color:var(--muted);font-size:12px}
+  .mini{color:var(--muted);font-size:11px}
 
   /* recent */
   .recent{padding:10px 14px 14px}
@@ -524,7 +524,7 @@
           <label>BANされたメガミ</label>
 
           <div class="suggestWrap">
-            <input id="myBan" list="wordList" placeholder="例：オボロ" required />
+            <input id="myBan" list="wordList" placeholder="例：オボロ" />
             <div class="suggestBox" id="myBanSuggest"></div>
           </div>
        </div>
@@ -533,7 +533,7 @@
           <label>BANしたメガミ</label>
 
           <div class="suggestWrap">
-            <input id="theirBan" list="wordList" placeholder="例：ユキヒ" required />
+            <input id="theirBan" list="wordList" placeholder="例：ユキヒ" />
             <div class="suggestBox" id="theirBanSuggest"></div>
           </div>
        </div>
@@ -556,6 +556,12 @@
             <option value="rank">ランク</option>
           </select>
         </div>
+        <div class="row">
+          <label>対戦日（任意）</label>
+          <input id="matchDate" type="date" />
+          <div class="mini">※未選択の場合は入力日で保存されます</div>
+        </div>
+
 
         <div class="row">
           <label>メモ短縮（任意）</label>
@@ -850,7 +856,7 @@
   const $ = (id) => document.getElementById(id);
   
   //バージョン更新
-  const APP_VERSION = "1.3.0";
+  const APP_VERSION = "1.4.0";
 
   function track(name, params={}){
     // gtag 未ロードでも壊れないように
@@ -1827,6 +1833,7 @@
     $("theirBan").value="";
     $("turn").value="";
     $("matchType").value="";
+    $("matchDate").value="";
     $("tag").value="";
     $("pivot").value="";
     $("next").value="";
@@ -1857,9 +1864,11 @@
     const myBanItem = upsertDict(myBan);
     const theirBanItem = upsertDict(theirBan);
 
+    const selectedDate = $("matchDate").value || todayKey();
+
     const entry = {
       id: Date.now(),
-      ts: nowStr(),
+      ts: `${selectedDate} ${currentTimeStr()}`,
       opponent: $("opponent").value.trim(),
       result: $("result").value,
 
