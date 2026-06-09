@@ -556,6 +556,15 @@
             <option value="rank">ランク</option>
           </select>
         </div>
+
+        <div class="row">
+          <label>シリーズ</label>
+          <select id="series">
+            <option value="再演" selected>再演</option>
+            <option value="新幕">新幕</option>
+          </select>
+        </div>
+
         <div class="row">
           <label>対戦日（任意）</label>
           <input id="matchDate" type="date" />
@@ -602,6 +611,11 @@
         <div class="statsControls">
           <span class="chip" id="todayChip">今日：0勝0敗</span>
      
+          <select id="seriesSelect" aria-label="シリーズを選択">
+            <option value="再演">シリーズ：再演</option>
+            <option value="新幕">シリーズ：新幕</option>
+          </select>
+
           <!-- ✅ 区分フィルタ（勝率の対象を切り替える） -->
           <select id="typeSelect" aria-label="区分を選択">
             <option value="ALL">区分：なし（全部）</option>
@@ -856,7 +870,7 @@
   const $ = (id) => document.getElementById(id);
   
   //バージョン更新
-  const APP_VERSION = "1.4.0";
+  const APP_VERSION = "1.6.0";
 
   function track(name, params={}){
     // gtag 未ロードでも壊れないように
@@ -1533,6 +1547,10 @@
     const d = new Date();
     return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
   }
+  function currentTimeStr(){
+    const d = new Date();
+    return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+  }
   function todayKey(){
     const d = new Date();
     return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
@@ -1575,6 +1593,10 @@
   function matchTypeText(v){
     return MATCH_TYPE_LABEL[v] || "—";
   }
+
+  function seriesText(v){
+    return v === "再演" ? "再演" : "新幕";
+  }
   
   function escapeHtml(s){
     return String(s||"")
@@ -1606,6 +1628,8 @@
     const resText = r.result === "WIN" ? "勝ち" : "負け";
     badges.push(`<span class="chip">${r.result === "WIN" ? "◎" : "×"}   ${escapeHtml(resText)}</span>`);
 
+    badges.push(`<span class="chip">シリーズ：${escapeHtml(seriesText(r.series))}</span>`);
+
     const mt = matchTypeText(r.matchType);
     if(mt !== "—") badges.push(`<span class="chip">📌 ${escapeHtml(mt)}</span>`);
     if(r.turn) badges.push(`<span class="chip">${escapeHtml(r.turn)}</span>`);
@@ -1619,6 +1643,7 @@
     const baseLines = [];
     baseLines.push(`使用：${myTeam} vs ${theirTeam}`);
     baseLines.push(`勝敗：${resText}`);
+    baseLines.push(`シリーズ：${seriesText(r.series)}`);
     baseLines.push(`区分：${mt}`);
     baseLines.push(`先後：${r.turn || "—"}`);
     if(r.opponent) baseLines.push(`相手：${r.opponent}`);
@@ -1666,14 +1691,20 @@
     return rows.filter(r => (r.matchType || "") === type);
   }
 
+  function filterBySeries(rows, series){
+    return rows.filter(r => seriesText(r.series) === series);
+  }
+
   // =========================================================
   // 8) 年セレクト
   // =========================================================
   const TYPE_SEL_KEY = "furuyoni_type_sel_v1";
+  const SERIES_SEL_KEY = "furuyoni_series_sel_v1";
 
   const state = {
     selectedYear: String(new Date().getFullYear()),
     selectedType: (localStorage.getItem(TYPE_SEL_KEY) || "ALL"),
+    selectedSeries: (localStorage.getItem(SERIES_SEL_KEY) || "再演"),
   };
 
   function buildYearOptions(rows){
@@ -1707,7 +1738,7 @@
   }
 
   function renderStats(rows){
-    const base = filterByType(rows, state.selectedType);
+    const base = filterBySeries(filterByType(rows, state.selectedType), state.selectedSeries);
 
     if(base.length===0){
       $("statsMeta").textContent="記録がありません";
@@ -1766,7 +1797,7 @@
           </td>
           <td>
             <span class="linklike" data-id="${r.id}">${escapeHtml(myTeam)} vs ${escapeHtml(theirTeam)}</span>
-            <span class="mini">　[${escapeHtml(mt)}]</span>
+            <span class="mini">　[${escapeHtml(seriesText(r.series))} / ${escapeHtml(mt)}]</span>
             ${r.tag ? `<span class="mini">　#${escapeHtml(r.tag)}</span>` : ""}
             <div class="mini">反省：${escapeHtml(r.pivot||"")}</div>
           </td>
@@ -1798,6 +1829,11 @@
     const typeSel = $("typeSelect");
     if(typeSel){
       typeSel.value = state.selectedType;
+    }
+
+    const seriesSel = $("seriesSelect");
+    if(seriesSel){
+      seriesSel.value = state.selectedSeries;
     }
 
     renderHeader(rows);
@@ -1833,6 +1869,7 @@
     $("theirBan").value="";
     $("turn").value="";
     $("matchType").value="";
+    $("series").value="再演";
     $("matchDate").value="";
     $("tag").value="";
     $("pivot").value="";
@@ -1886,6 +1923,7 @@
 
       turn: $("turn").value,
       matchType: $("matchType").value,
+      series: $("series").value,
       tag: $("tag").value.trim(),
       pivot: $("pivot").value.trim(),
       next: $("next").value.trim(),
@@ -1905,6 +1943,7 @@
     track("log_save", {
       result: entry.result,                 // WIN / LOSE
       match_type: entry.matchType || "none",
+      series: entry.series,
       has_opponent: !!entry.opponent,
       has_tag: !!entry.tag,
       has_pivot: !!entry.pivot,
@@ -1948,6 +1987,15 @@
     // ✅ 区分が変わったら勝率の表示を更新
     const rows = loadRows();
     renderHeader(rows); // 今日チップ等も更新したいなら
+    renderStats(rows);
+  });
+
+  $("seriesSelect").addEventListener("change", ()=>{
+    state.selectedSeries = $("seriesSelect").value;
+    localStorage.setItem(SERIES_SEL_KEY, state.selectedSeries);
+
+    const rows = loadRows();
+    renderHeader(rows);
     renderStats(rows);
   });
 

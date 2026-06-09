@@ -413,6 +413,11 @@
         <option value="free">区分：フリプ</option>
         <option value="rank">区分：ランク</option>
       </select>
+      <select id="seriesFilter" aria-label="シリーズフィルタ">
+        <option value="ALL">シリーズ：全て</option>
+        <option value="再演">再演</option>
+        <option value="新幕">新幕</option>
+      </select>
     </div>
 
     <div class="pager" id="pager"></div>
@@ -497,6 +502,13 @@
                 <option value="tournament">大会</option>
                 <option value="free">フリプ</option>
                 <option value="rank">ランク</option>
+              </select>
+            </div>
+            <div class="row">
+              <div class="cap">シリーズ</div>
+              <select id="editSeries">
+                <option value="再演">再演</option>
+                <option value="新幕">新幕</option>
               </select>
             </div>
             <div class="row">
@@ -674,7 +686,7 @@
   const $ = (id) => document.getElementById(id);
 
   //バージョン更新
-  const APP_VERSION = "1.4.0";
+  const APP_VERSION = "1.6.0";
 
   function track(name, params={}){
     // gtag 未ロードでも壊れないように
@@ -878,6 +890,7 @@
       date: toDateFromTs(r.ts),
 
       result: r.result, // WIN/LOSE
+      series: seriesText(r.series),
 
       // ここは今の運用に合わせて「文字列のまま」出します
       my1: r.my1 || null,
@@ -923,6 +936,7 @@
       opponent: "",
 
       result: u.result === "WIN" ? "WIN" : "LOSE",
+      series: u.series || "新幕",
 
       my1: u.my1 || "",
       my2: u.my2 || "",
@@ -953,6 +967,7 @@
     return [
       date,
       r.result || "",
+      seriesText(r.series),
       r.matchType || "",
       toUnifiedTurn(r.turn) || "",
       myA,myB,thA,thB
@@ -965,6 +980,7 @@
     return [
       date,
       u.result || "",
+      u.series || "新幕",
       u.match_type || "",
       (u.turn || ""),
       myA,myB,thA,thB
@@ -1043,7 +1059,7 @@
     const res = r.result === "WIN" ? "勝ち" : "負け";
     const mt = matchTypeText(r.matchType);
     const turn = r.turn || "—";
-    return `${date} / ${res} / ${mt} / ${turn}\n${pairName(r.my1,r.my2)} vs ${pairName(r.their1,r.their2)}`;
+    return `${date} / ${res} / ${seriesText(r.series)} / ${mt} / ${turn}\n${pairName(r.my1,r.my2)} vs ${pairName(r.their1,r.their2)}`;
   }
 
   function renderDupResolver(){
@@ -1621,6 +1637,10 @@
     const d = new Date();
     return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
   }
+  function currentTimeStr(){
+    const d = new Date();
+    return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+  }
   function compareRowsNewest(a,b){
     const ta = String(a.ts || "");
     const tb = String(b.ts || "");
@@ -1639,6 +1659,10 @@
   };
   function matchTypeText(v){
     return MATCH_TYPE_LABEL[v] || "—";
+  }
+
+  function seriesText(v){
+    return v || "新幕";
   }
   
   function escapeHtml(s){
@@ -1700,11 +1724,15 @@
       filtered = filtered.filter(r => (r.matchType || "") === state.selectedType);
     }
 
+    if(state.selectedSeries !== "ALL"){
+      filtered = filtered.filter(r => seriesText(r.series) === state.selectedSeries);
+    }
+
     if(q){
       filtered = filtered.filter(r=>{
         const hay = [
           r.opponent, r.my1, r.my2, r.their1, r.their2, r.turn, r.tag,
-          r.pivot, r.next, r.ts, r.result, r.myBan, r.theirBan, r.matchType
+          r.pivot, r.next, r.ts, r.result, r.myBan, r.theirBan, r.matchType, seriesText(r.series)
         ].join(" ").toLowerCase();
         return hay.includes(q);
       });
@@ -1718,6 +1746,7 @@
     ページング
   ========================= */
   const TYPE_FILTER_KEY = "furuyoni_list_type_filter_v1";
+  const SERIES_FILTER_KEY = "furuyoni_list_series_filter_v1";
 
   const state = {
     page: 1,
@@ -1725,6 +1754,7 @@
     keyword: "",
     result: "ALL",
     selectedType: localStorage.getItem(TYPE_FILTER_KEY) || "ALL",
+    selectedSeries: localStorage.getItem(SERIES_FILTER_KEY) || "再演",
   };
 
   function clampPage(page, totalPages){
@@ -1800,6 +1830,7 @@
   function getEditSnapshot(){
     return {
       result: $("editResult").value,
+      series: $("editSeries").value,
       turn: $("editTurn").value,
       matchDate: $("editMatchDate").value,
       my1: $("editMy1").value.trim(),
@@ -1845,6 +1876,7 @@
 
   function fillEditForm(r){
     $("editResult").value = r.result || "WIN";
+    $("editSeries").value = seriesText(r.series);
     $("editTurn").value = r.turn || "";
     $("editMatchDate").value = (r.ts || "").slice(0,10);
     $("editMy1").value = r.my1 || "";
@@ -1877,6 +1909,7 @@
     badges.push(`<span class="${resClass}">● ${escapeHtml(resText)}</span>`);
 
     const mt = matchTypeText(r.matchType);
+    badges.push(`<span class="badge">シリーズ：${escapeHtml(seriesText(r.series))}</span>`);
     if(mt !== "—") badges.push(`<span class="badge">📌 ${escapeHtml(mt)}</span>`);
     if(r.turn) badges.push(`<span class="badge">${escapeHtml(r.turn)}</span>`);
     if(r.tag)  badges.push(`<span class="badge tagBadge">#${escapeHtml(r.tag)}</span>`);
@@ -1887,6 +1920,7 @@
     const baseLines = [];
     baseLines.push(`使用：${pairName(r.my1,r.my2)} vs ${pairName(r.their1,r.their2)}`);
     baseLines.push(`勝敗：${resText}`);
+    baseLines.push(`シリーズ：${seriesText(r.series)}`);
     baseLines.push(`区分：${mt}`);
     baseLines.push(`先後：${r.turn || "—"}`);
     $("detailBase").textContent = baseLines.join("\n");
@@ -1989,6 +2023,7 @@
       ...original,
       ts: `${selectedDate} ${safeTime}`,
       result: $("editResult").value,
+      series: $("editSeries").value,
       turn: $("editTurn").value,
       my1: $("editMy1").value.trim(),
       my2: $("editMy2").value.trim(),
@@ -2042,6 +2077,7 @@
 
     track("log_edit_save", {
       result: updated.result,
+      series: updated.series || "新幕",
       match_type: updated.matchType || "none"
     });
 
@@ -2132,7 +2168,7 @@
           </td>
           <td>
             <span class="linklike" data-open="${r.id}">${escapeHtml(myTeam)} vs ${escapeHtml(theirTeam)}</span>
-            <span class="mini">　[${escapeHtml(mt)}]</span>
+            <span class="mini">　[${escapeHtml(seriesText(r.series))} / ${escapeHtml(mt)}]</span>
             ${r.tag ? `<span class="mini">　#${escapeHtml(r.tag)}</span>` : ""}
             <div class="mini">BAN：自分 ${escapeHtml(r.myBan||"—")} / 相手 ${escapeHtml(r.theirBan||"—")}</div>
             <div class="mini">反省：${escapeHtml(pivot1)}${ellipsis}</div>
@@ -2220,7 +2256,8 @@
       track("list_search", {
         has_query: !!$("q").value.trim(),
         result_filter: $("filter").value,
-        type_filter: $("typeFilter").value
+        type_filter: $("typeFilter").value,
+        series_filter: $("seriesFilter").value
       });
     }, 500);
   });
@@ -2231,7 +2268,8 @@
 
     track("list_filter_change", {
       result_filter: $("filter").value,
-      type_filter: $("typeFilter").value
+      type_filter: $("typeFilter").value,
+      series_filter: $("seriesFilter").value
     });
   });
 
@@ -2243,11 +2281,26 @@
 
     track("list_filter_change", {
       result_filter: $("filter").value,
-      type_filter: state.selectedType
+      type_filter: state.selectedType,
+      series_filter: state.selectedSeries
+    });
+  });
+
+  $("seriesFilter").addEventListener("change", ()=>{
+    state.selectedSeries = $("seriesFilter").value;
+    localStorage.setItem(SERIES_FILTER_KEY, state.selectedSeries);
+    state.page = 1;
+    render();
+
+    track("list_filter_change", {
+      result_filter: $("filter").value,
+      type_filter: state.selectedType,
+      series_filter: state.selectedSeries
     });
   });
 
   $("typeFilter").value = state.selectedType;
+  $("seriesFilter").value = state.selectedSeries;
 
     const vb = $("versionBadge");
     if(vb) vb.textContent = `v${APP_VERSION}`;
